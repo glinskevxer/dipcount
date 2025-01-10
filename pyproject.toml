@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dipcount"
+version = "0.1.0"
+description = "Mosquito abatement district: surveillance, treatment records and pesticide use reporting"
+requires-python = ">=3.12"
+dependencies = ["click==8.1.8"]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.3.4",
+  "pytest-cov==6.0.0",
+  "coverage==7.6.10",
+  "ruff==0.9.2",
+  "mypy==1.14.1",
+]
+
+[project.scripts]
+dipcount = "dipcount.cli.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dipcount"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "docs", "README.md", "CHANGELOG.md", "constraints.txt", "check.sh"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E", "W", "F", "I", "B", "C4", "UP", "SIM", "RET", "ARG", "N", "PT",
+  "A", "BLE", "C90", "DTZ", "ISC", "PIE", "RSE", "RUF", "TID",
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG001", "ARG002"]
+# The error names read as sentences at the raise site, which is worth more
+# than the suffix convention: `raise NotFound("trap", key)`.
+"src/dipcount/errors.py" = ["N818"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+files = ["src", "tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/dipcount"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+exclude_lines = ["pragma: no cover", "if __name__ == .__main__.:"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["error"]
