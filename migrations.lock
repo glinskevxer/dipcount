@@ -1,0 +1,2 @@
+# One line per migration: number, digest, name. Never edit a shipped line.
+001 13c9b8e9b58caa07 zones sites and the audit trail

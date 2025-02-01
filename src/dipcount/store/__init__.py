@@ -6,5 +6,7 @@ layer check enforces that: a service that wants a row asks a store for it.
 """
 
 from dipcount.store.book import Book, Row
+from dipcount.store.migrate import ready, require_ready, upgrade
+from dipcount.store.migrations import MIGRATIONS, latest
 
-__all__ = ["Book", "Row"]
+__all__ = ["MIGRATIONS", "Book", "Row", "latest", "ready", "require_ready", "upgrade"]
