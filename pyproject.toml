@@ -45,6 +45,8 @@ max-complexity = 12
 # The error names read as sentences at the raise site, which is worth more
 # than the suffix convention: `raise NotFound("trap", key)`.
 "src/dipcount/errors.py" = ["N818"]
+# A module under `dipcount.model` cannot shadow anything on the import path.
+"src/dipcount/model/*.py" = ["A005"]
 
 [tool.mypy]
 python_version = "3.12"
