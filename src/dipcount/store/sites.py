@@ -123,6 +123,16 @@ def remeasure(book: Book, site_id: str, extent: Quantity) -> Site:
     return get(book, site_id)
 
 
+def move(book: Book, site_id: str, zone_id: str) -> Site:
+    """Put a site into another zone, refusing a name collision there."""
+    site = get(book, site_id)
+    zone = zones.get(book, zone_id)
+    if find_by_name(book, zone.id, site.name) is not None:
+        raise Duplicate("site", f"{zone.name}/{site.name}")
+    book.run("UPDATE site SET zone = ? WHERE id = ?", (zone.id, site_id))
+    return get(book, site_id)
+
+
 def total_extent(book: Book, habitat: str, *, zone_id: str | None = None) -> Quantity:
     """How much of one habitat the district holds."""
     sites = all_sites(book, zone_id=zone_id, habitat=habitat)
