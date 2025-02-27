@@ -47,6 +47,7 @@ max-complexity = 12
 "src/dipcount/errors.py" = ["N818"]
 # A module under `dipcount.model` cannot shadow anything on the import path.
 "src/dipcount/model/*.py" = ["A005"]
+"src/dipcount/cli/*.py" = ["A005"]
 
 [tool.mypy]
 python_version = "3.12"
