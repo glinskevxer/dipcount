@@ -30,9 +30,10 @@ def test_migrating_twice_does_nothing_the_second_time(book: Book) -> None:
     assert pending(book) == []
 
 
-def test_the_tables_the_first_step_makes(book: Book) -> None:
+def test_the_steps_make_every_table_the_package_reads(book: Book) -> None:
     upgrade(book)
-    assert book.tables() == ["audit", "site", "zone"]
+    made = set(book.tables())
+    assert {"audit", "site", "zone", "inspection", "larvae"} <= made
 
 
 def test_an_unmigrated_book_is_refused(book: Book) -> None:

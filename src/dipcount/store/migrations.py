@@ -70,7 +70,36 @@ CREATE INDEX audit_by_subject ON audit (subject);
 CREATE INDEX audit_by_at ON audit (at);
 """
 
-MIGRATIONS: Final[tuple[Migration, ...]] = (Migration(1, "zones sites and the audit trail", _V1),)
+_V2 = """
+CREATE TABLE inspection (
+    id          TEXT PRIMARY KEY,
+    site        TEXT NOT NULL REFERENCES site (id),
+    at          TEXT NOT NULL,
+    inspector   TEXT NOT NULL,
+    water       INTEGER NOT NULL,
+    dips        INTEGER NOT NULL DEFAULT 0,
+    note        TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX inspection_by_site ON inspection (site);
+CREATE INDEX inspection_by_at ON inspection (at);
+
+CREATE TABLE larvae (
+    seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+    inspection  TEXT NOT NULL REFERENCES inspection (id),
+    species     TEXT NOT NULL DEFAULT '',
+    stage       TEXT NOT NULL,
+    tally       INTEGER NOT NULL,
+    UNIQUE (inspection, species, stage)
+);
+
+CREATE INDEX larvae_by_inspection ON larvae (inspection);
+"""
+
+MIGRATIONS: Final[tuple[Migration, ...]] = (
+    Migration(1, "zones sites and the audit trail", _V1),
+    Migration(2, "inspections and what the dipper found", _V2),
+)
 
 
 def latest() -> int:

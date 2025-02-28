@@ -6,7 +6,8 @@ store or raises about anything it cannot see from its own fields.
 """
 
 from dipcount.model.audit import Entry
+from dipcount.model.inspection import Inspection, Tally
 from dipcount.model.site import Site
 from dipcount.model.zone import Zone
 
-__all__ = ["Entry", "Site", "Zone"]
+__all__ = ["Entry", "Inspection", "Site", "Tally", "Zone"]
