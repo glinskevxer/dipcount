@@ -15,8 +15,14 @@ from dipcount.service.district import (
     retire_site,
     site_history,
 )
+from dipcount.service.survey import Finding, assess, due, inspect, judge
 
 __all__ = [
+    "Finding",
+    "assess",
+    "due",
+    "inspect",
+    "judge",
     "list_site",
     "list_zone",
     "move_site",
