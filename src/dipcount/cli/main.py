@@ -9,6 +9,7 @@ import click
 
 from dipcount import __version__, clock
 from dipcount.cli import book as book_commands
+from dipcount.cli import dip as dip_commands
 from dipcount.cli import site as site_commands
 from dipcount.cli import zone as zone_commands
 from dipcount.cli.options import Desk
@@ -47,6 +48,7 @@ def cli(ctx: click.Context, book_path: Path, actor: str, zone_name: str) -> None
 cli.add_command(book_commands.book)
 cli.add_command(zone_commands.zone)
 cli.add_command(site_commands.site)
+cli.add_command(dip_commands.dip)
 
 
 @cli.command()
