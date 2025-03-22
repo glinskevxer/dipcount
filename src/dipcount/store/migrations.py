@@ -96,9 +96,39 @@ CREATE TABLE larvae (
 CREATE INDEX larvae_by_inspection ON larvae (inspection);
 """
 
+_V3 = """
+CREATE TABLE station (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL UNIQUE,
+    zone        TEXT NOT NULL REFERENCES zone (id),
+    elevation   INTEGER NOT NULL DEFAULT 0,
+    opened_on   TEXT NOT NULL,
+    closed_on   TEXT,
+    note        TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX station_by_zone ON station (zone);
+
+CREATE TABLE observation (
+    id          TEXT PRIMARY KEY,
+    station     TEXT NOT NULL REFERENCES station (id),
+    on_day      TEXT NOT NULL,
+    high_f      REAL NOT NULL,
+    low_f       REAL NOT NULL,
+    rain_in     REAL NOT NULL DEFAULT 0,
+    wind_mph    REAL NOT NULL DEFAULT 0,
+    note        TEXT NOT NULL DEFAULT '',
+    UNIQUE (station, on_day)
+);
+
+CREATE INDEX observation_by_day ON observation (on_day);
+CREATE INDEX observation_by_station ON observation (station);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
+    Migration(3, "weather stations and their daily observations", _V3),
 )
 
 
