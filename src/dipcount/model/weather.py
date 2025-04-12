@@ -50,7 +50,15 @@ def degree_days(high: float, low: float, base: float = 50.0, method: str = MODIF
 
 
 def _round(value: float) -> Decimal:
-    return Decimal(str(round(max(value, 0.0), 2)))
+    """Two places, with a whole number printed as one.
+
+    ``Decimal("23.0")`` and ``Decimal("23")`` compare equal and print
+    differently, and the printed form is what a report and a test both read.
+    """
+    found = Decimal(str(round(max(value, 0.0), 2))).normalize()
+    if found == found.to_integral_value():
+        return found.quantize(Decimal(1))
+    return found
 
 
 def _single_sine(high: float, low: float, base: float) -> Decimal:
