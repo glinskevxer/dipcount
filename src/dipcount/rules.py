@@ -80,6 +80,26 @@ CLAUSES: Final[tuple[Clause, ...]] = (
         " it goes to the back of the round rather than off the list.",
     ),
     Clause(
+        "weather.method",
+        "a season is accumulated one way from end to end",
+        "Degree days are counted by one method for the whole season. A total"
+        " built one way cannot be compared with a total built another, and"
+        " changing method part way through produces neither.",
+    ),
+    Clause(
+        "weather.gap",
+        "a missing day is not a day with no heat in it",
+        "An accumulation over a window with missing readings is reported with"
+        " the gaps named. Treating a gap as zero runs the total low for the"
+        " rest of the season.",
+    ),
+    Clause(
+        "weather.flood",
+        "half an inch is a brood",
+        "Rain of half an inch or more over a day puts every floodwater site"
+        " in the zone on the round, ahead of its ordinary interval.",
+    ),
+    Clause(
         "site.extent",
         "a site is measured in the unit its habitat uses",
         "Structures are counted one at a time and ground is measured in acres."
@@ -145,6 +165,32 @@ LATE_URGENT: Final = Decimal("0.75")
 
 RAFT_INTERVAL: Final = 4
 """Days to the next visit when egg rafts were the only thing found."""
+
+FLOOD_INCHES: Final = Decimal("0.5")
+"""Rain over one day that puts the floodwater sites back on the round."""
+
+FLOOD_INTERVAL: Final = 4
+"""Days after a triggering rain that the floodwater brood is worth dipping."""
+
+_DEVELOPMENT: Final[dict[str, str]] = {
+    species.FLOODWATER: "110",
+    species.PERMANENT: "145",
+    species.WOODLAND: "125",
+    species.CONTAINER: "165",
+}
+
+
+def development(guild: str) -> Decimal:
+    """Heat units from egg to adult for a guild, base fifty."""
+    try:
+        return Decimal(_DEVELOPMENT[guild])
+    except KeyError as exc:
+        raise NotFound("guild", guild) from exc
+
+
+def guilds() -> list[str]:
+    """Every guild the development table covers."""
+    return sorted(_DEVELOPMENT)
 
 
 def base_threshold(habitat: str) -> Decimal:
