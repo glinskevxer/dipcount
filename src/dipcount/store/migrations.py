@@ -125,10 +125,53 @@ CREATE INDEX observation_by_day ON observation (on_day);
 CREATE INDEX observation_by_station ON observation (station);
 """
 
+_V4 = """
+CREATE TABLE trap (
+    id          TEXT PRIMARY KEY,
+    zone        TEXT NOT NULL REFERENCES zone (id),
+    name        TEXT NOT NULL UNIQUE,
+    kind        TEXT NOT NULL,
+    latitude    REAL,
+    longitude   REAL,
+    listed_on   TEXT NOT NULL,
+    retired_on  TEXT,
+    note        TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX trap_by_zone ON trap (zone);
+CREATE INDEX trap_by_kind ON trap (kind);
+
+CREATE TABLE collection (
+    id          TEXT PRIMARY KEY,
+    trap        TEXT NOT NULL REFERENCES trap (id),
+    set_at      TEXT NOT NULL,
+    pulled_at   TEXT NOT NULL,
+    nights      REAL NOT NULL,
+    worked      INTEGER NOT NULL DEFAULT 1,
+    handler     TEXT NOT NULL,
+    note        TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX collection_by_trap ON collection (trap);
+CREATE INDEX collection_by_pulled ON collection (pulled_at);
+
+CREATE TABLE catch (
+    seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+    collection  TEXT NOT NULL REFERENCES collection (id),
+    species     TEXT NOT NULL,
+    sex         TEXT NOT NULL,
+    tally       INTEGER NOT NULL,
+    UNIQUE (collection, species, sex)
+);
+
+CREATE INDEX catch_by_collection ON catch (collection);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
     Migration(3, "weather stations and their daily observations", _V3),
+    Migration(4, "traps, the collections off them and what was in the jar", _V4),
 )
 
 
