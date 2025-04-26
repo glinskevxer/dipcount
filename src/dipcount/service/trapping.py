@@ -20,8 +20,8 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 
 from dipcount import clock, rules, species
-from dipcount.model.trap import Collection, Trap
-from dipcount.store import traps
+from dipcount.model.trap import Catch, Collection, Trap
+from dipcount.store import audit, traps
 from dipcount.store.book import Book
 
 
@@ -249,6 +249,44 @@ def vector_index(
         dropped=dropped,
         species=virus,
     )
+
+
+def collect(
+    book: Book,
+    actor: str,
+    trap_id: str,
+    set_at: dt.datetime,
+    pulled_at: dt.datetime,
+    *,
+    worked: bool = True,
+    catches: tuple[Catch, ...] = (),
+    note: str = "",
+) -> Collection:
+    """Write a collection and leave a line on the trail.
+
+    The trail line carries the index for that jar rather than the raw count,
+    because the count on its own says nothing until it is divided by the
+    nights the trap was out.
+    """
+    trap = traps.resolve(book, trap_id)
+    with book.writing():
+        made = traps.record(
+            book,
+            trap.id,
+            set_at,
+            pulled_at,
+            actor,
+            worked=worked,
+            catches=catches,
+            note=note,
+        )
+        detail = (
+            f"{made.id}: did not run"
+            if not made.worked
+            else f"{made.id}: {made.females} females in {made.nights} nights"
+        )
+        audit.record(book, actor, "collected", trap.id, detail, at=pulled_at)
+    return made
 
 
 def due(book: Book, on: dt.date, *, every: int = 7, zone_id: str | None = None) -> list[Trap]:
