@@ -80,6 +80,29 @@ CLAUSES: Final[tuple[Clause, ...]] = (
         " it goes to the back of the round rather than off the list.",
     ),
     Clause(
+        "adult.threshold",
+        "a trap kind has its own figure",
+        "Each kind of trap has an action figure in females per trap night. A"
+        " light trap catches everything that flies and a gravid trap catches"
+        " the few that have already fed, so the two figures are not comparable"
+        " and neither is a total taken across both.",
+    ),
+    Clause(
+        "adult.broken",
+        "a trap that did not run is not a night of nothing",
+        "A collection off a trap that was knocked over, or whose battery was"
+        " flat, is left out of both halves of the index. Counting it as a"
+        " night of zero drags the figure down for the whole week.",
+    ),
+    Clause(
+        "adult.baseline",
+        "twice the usual is the thing worth reporting",
+        "A week is elevated when its index is at least twice the mean of the"
+        " same week in the seasons before it. A district with three seasons"
+        " behind it has a baseline; one without has a figure and no baseline,"
+        " and the difference is reported rather than hidden.",
+    ),
+    Clause(
         "weather.method",
         "a season is accumulated one way from end to end",
         "Degree days are counted by one method for the whole season. A total"
@@ -178,6 +201,33 @@ _DEVELOPMENT: Final[dict[str, str]] = {
     species.WOODLAND: "125",
     species.CONTAINER: "165",
 }
+
+
+_ADULT: Final[dict[str, str]] = {
+    "light": "50",
+    "gravid": "10",
+    "bg": "5",
+    "resting": "5",
+}
+
+ELEVATED: Final = Decimal("2")
+"""How many times the baseline a week has to reach to be called elevated."""
+
+BASELINE_SEASONS: Final = 3
+"""How many earlier seasons a baseline is taken over."""
+
+
+def adult_threshold(kind: str) -> Decimal:
+    """The females per trap night a kind of trap is worth acting on."""
+    try:
+        return Decimal(_ADULT[kind])
+    except KeyError as exc:
+        raise NotFound("trap kind", kind) from exc
+
+
+def adult_thresholds() -> dict[str, Decimal]:
+    """Every trap kind's figure, for a report or a check."""
+    return {key: Decimal(value) for key, value in _ADULT.items()}
 
 
 def development(guild: str) -> Decimal:
