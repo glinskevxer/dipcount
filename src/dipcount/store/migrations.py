@@ -167,11 +167,40 @@ CREATE TABLE catch (
 CREATE INDEX catch_by_collection ON catch (collection);
 """
 
+_V5 = """
+CREATE TABLE pool (
+    id            TEXT PRIMARY KEY,
+    collection    TEXT NOT NULL REFERENCES collection (id),
+    species       TEXT NOT NULL,
+    size          INTEGER NOT NULL,
+    submitted_on  TEXT NOT NULL,
+    lab           TEXT NOT NULL DEFAULT '',
+    note          TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX pool_by_collection ON pool (collection);
+CREATE INDEX pool_by_submitted ON pool (submitted_on);
+
+CREATE TABLE assay (
+    seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+    pool        TEXT NOT NULL REFERENCES pool (id),
+    virus       TEXT NOT NULL,
+    outcome     TEXT NOT NULL,
+    tested_on   TEXT,
+    ct          REAL,
+    UNIQUE (pool, virus)
+);
+
+CREATE INDEX assay_by_pool ON assay (pool);
+CREATE INDEX assay_by_virus ON assay (virus);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
     Migration(3, "weather stations and their daily observations", _V3),
     Migration(4, "traps, the collections off them and what was in the jar", _V4),
+    Migration(5, "pools sent to the lab and what came back", _V5),
 )
 
 
