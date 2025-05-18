@@ -103,6 +103,35 @@ CLAUSES: Final[tuple[Clause, ...]] = (
         " and the difference is reported rather than hidden.",
     ),
     Clause(
+        "virus.vector",
+        "only what carries the virus is in the rate for it",
+        "A pool is tested whatever species it holds, and the result is kept."
+        " The infection rate for a virus is estimated over the pools of"
+        " species that carry it, because a negative pool of something that"
+        " could never have been positive says nothing about the rate.",
+    ),
+    Clause(
+        "virus.pools",
+        "an unreadable pool is neither positive nor negative",
+        "A pool the laboratory reported as unsatisfactory is left out of both"
+        " halves of the rate, and one still out at the laboratory has not"
+        " happened yet.",
+    ),
+    Clause(
+        "virus.week",
+        "a pool belongs to the week it was caught in",
+        "Results are reported against the reporting week the jar was pulled"
+        " in, not the week the vial reached the laboratory. Two districts"
+        " with different courier days have to be addable.",
+    ),
+    Clause(
+        "virus.ladder",
+        "the vector index is what the response level reads",
+        "Abundance on its own and infection rate on its own each say half of"
+        " it. The product is how many infected females a trap takes in a"
+        " night, and the response level is read off that.",
+    ),
+    Clause(
         "weather.method",
         "a season is accumulated one way from end to end",
         "Degree days are counted by one method for the whole season. A total"
@@ -228,6 +257,31 @@ def adult_threshold(kind: str) -> Decimal:
 def adult_thresholds() -> dict[str, Decimal]:
     """Every trap kind's figure, for a report or a check."""
     return {key: Decimal(value) for key, value in _ADULT.items()}
+
+
+_LADDER: Final[tuple[tuple[str, str], ...]] = (
+    ("none", "0"),
+    ("low", "0.05"),
+    ("moderate", "0.25"),
+    ("high", "0.75"),
+    ("emergency", "1.5"),
+)
+
+
+def response_level(vector_index: Decimal) -> str:
+    """The response level a vector index puts the district on."""
+    if vector_index < 0:
+        raise NotFound("response level", str(vector_index))
+    level = _LADDER[0][0]
+    for name, floor in _LADDER:
+        if vector_index >= Decimal(floor):
+            level = name
+    return level
+
+
+def ladder() -> list[tuple[str, Decimal]]:
+    """The response ladder, lowest first."""
+    return [(name, Decimal(floor)) for name, floor in _LADDER]
 
 
 def development(guild: str) -> Decimal:
