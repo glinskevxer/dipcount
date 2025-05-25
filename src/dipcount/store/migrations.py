@@ -195,12 +195,50 @@ CREATE INDEX assay_by_pool ON assay (pool);
 CREATE INDEX assay_by_virus ON assay (virus);
 """
 
+_V6 = """
+CREATE TABLE product (
+    id            TEXT PRIMARY KEY,
+    name          TEXT NOT NULL UNIQUE,
+    registration  TEXT NOT NULL UNIQUE,
+    maker         TEXT NOT NULL,
+    active        TEXT NOT NULL,
+    percent       REAL NOT NULL,
+    form          TEXT NOT NULL,
+    purpose       TEXT NOT NULL,
+    restricted    INTEGER NOT NULL DEFAULT 0,
+    signal        TEXT NOT NULL DEFAULT 'caution',
+    reentry       INTEGER NOT NULL DEFAULT 0,
+    added_on      TEXT NOT NULL,
+    withdrawn_on  TEXT,
+    note          TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX product_by_active ON product (active);
+CREATE INDEX product_by_form ON product (form);
+
+CREATE TABLE label_rate (
+    seq           INTEGER PRIMARY KEY AUTOINCREMENT,
+    product       TEXT NOT NULL REFERENCES product (id),
+    habitat       TEXT NOT NULL,
+    low_rate      TEXT NOT NULL,
+    high_rate     TEXT NOT NULL,
+    per           TEXT NOT NULL,
+    season_max    TEXT,
+    interval_days INTEGER NOT NULL DEFAULT 0,
+    UNIQUE (product, habitat)
+);
+
+CREATE INDEX label_rate_by_product ON label_rate (product);
+CREATE INDEX label_rate_by_habitat ON label_rate (habitat);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
     Migration(3, "weather stations and their daily observations", _V3),
     Migration(4, "traps, the collections off them and what was in the jar", _V4),
     Migration(5, "pools sent to the lab and what came back", _V5),
+    Migration(6, "the product shelf and the rates on the labels", _V6),
 )
 
 
