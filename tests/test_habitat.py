@@ -75,9 +75,11 @@ def test_the_forms_a_habitat_takes_are_all_real_forms() -> None:
         assert set(one.forms) <= every
 
 
-def test_a_trough_only_takes_a_pouch_because_stock_drink_from_it() -> None:
+def test_a_trough_takes_nothing_that_is_not_cleared_for_drinking_water() -> None:
     trough = hb.habitat("livestock_trough")
-    assert trough.forms == (hb.POUCH,)
+    assert set(trough.forms) == {hb.POUCH, hb.LIQUID}
+    assert not trough.allows(hb.GRANULE)
+    assert not trough.allows(hb.OIL)
     assert not trough.public
 
 

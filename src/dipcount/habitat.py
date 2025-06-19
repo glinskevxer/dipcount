@@ -203,7 +203,7 @@ _TABLE: Final[tuple[Habitat, ...]] = (
         PIPETTE,
         21,
         (species.PERMANENT,),
-        (POUCH,),
+        (POUCH, LIQUID),
         public=False,
         note="stock drink out of it, so only what the label clears for that",
     ),
@@ -215,9 +215,10 @@ _TABLE: Final[tuple[Habitat, ...]] = (
         VISUAL,
         21,
         (species.PERMANENT,),
-        (POUCH, PELLET),
+        (POUCH, PELLET, LIQUID),
         fish=True,
         public=False,
+        note="fish in it, so nothing that strips the surface",
     ),
     Habitat(
         "sump",
@@ -227,8 +228,9 @@ _TABLE: Final[tuple[Habitat, ...]] = (
         PIPETTE,
         7,
         (species.PERMANENT, species.CONTAINER),
-        (POUCH, LIQUID, PELLET),
+        (POUCH, LIQUID, PELLET, BRIQUET),
         public=False,
+        note="it sits for a season, so a briquet is worth the walk",
     ),
 )
 
