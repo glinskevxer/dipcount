@@ -11,6 +11,7 @@ from dipcount import __version__, clock
 from dipcount.cli import book as book_commands
 from dipcount.cli import dip as dip_commands
 from dipcount.cli import pool as pool_commands
+from dipcount.cli import product as product_commands
 from dipcount.cli import site as site_commands
 from dipcount.cli import trap as trap_commands
 from dipcount.cli import virus as virus_commands
@@ -56,6 +57,7 @@ cli.add_command(dip_commands.dip)
 cli.add_command(trap_commands.trap)
 cli.add_command(pool_commands.pool)
 cli.add_command(virus_commands.arbo)
+cli.add_command(product_commands.product)
 cli.add_command(weather_commands.wx)
 
 
