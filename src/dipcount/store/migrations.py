@@ -232,6 +232,36 @@ CREATE INDEX label_rate_by_product ON label_rate (product);
 CREATE INDEX label_rate_by_habitat ON label_rate (habitat);
 """
 
+_V7 = """
+CREATE TABLE lot (
+    id           TEXT PRIMARY KEY,
+    product      TEXT NOT NULL REFERENCES product (id),
+    code         TEXT NOT NULL,
+    received_on  TEXT NOT NULL,
+    quantity     TEXT NOT NULL,
+    expires_on   TEXT,
+    held_at      TEXT NOT NULL DEFAULT '',
+    note         TEXT NOT NULL DEFAULT '',
+    UNIQUE (product, code)
+);
+
+CREATE INDEX lot_by_product ON lot (product);
+CREATE INDEX lot_by_expiry ON lot (expires_on);
+
+CREATE TABLE draw (
+    seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+    lot         TEXT NOT NULL REFERENCES lot (id),
+    at          TEXT NOT NULL,
+    amount      TEXT NOT NULL,
+    reason      TEXT NOT NULL,
+    reference   TEXT NOT NULL DEFAULT '',
+    actor       TEXT NOT NULL
+);
+
+CREATE INDEX draw_by_lot ON draw (lot);
+CREATE INDEX draw_by_reference ON draw (reference);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
@@ -239,6 +269,7 @@ MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(4, "traps, the collections off them and what was in the jar", _V4),
     Migration(5, "pools sent to the lab and what came back", _V5),
     Migration(6, "the product shelf and the rates on the labels", _V6),
+    Migration(7, "lots on the shelf and every draw off them", _V7),
 )
 
 
