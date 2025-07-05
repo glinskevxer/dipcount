@@ -262,6 +262,27 @@ CREATE INDEX draw_by_lot ON draw (lot);
 CREATE INDEX draw_by_reference ON draw (reference);
 """
 
+_V8 = """
+CREATE TABLE treatment (
+    id          TEXT PRIMARY KEY,
+    site        TEXT NOT NULL REFERENCES site (id),
+    product     TEXT NOT NULL REFERENCES product (id),
+    lot         TEXT NOT NULL REFERENCES lot (id),
+    at          TEXT NOT NULL,
+    applicator  TEXT NOT NULL,
+    extent      TEXT NOT NULL,
+    amount      TEXT NOT NULL,
+    equipment   TEXT NOT NULL DEFAULT '',
+    inspection  TEXT REFERENCES inspection (id),
+    note        TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX treatment_by_site ON treatment (site);
+CREATE INDEX treatment_by_product ON treatment (product);
+CREATE INDEX treatment_by_lot ON treatment (lot);
+CREATE INDEX treatment_by_at ON treatment (at);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
@@ -270,6 +291,7 @@ MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(5, "pools sent to the lab and what came back", _V5),
     Migration(6, "the product shelf and the rates on the labels", _V6),
     Migration(7, "lots on the shelf and every draw off them", _V7),
+    Migration(8, "treatments, and what went on what", _V8),
 )
 
 
