@@ -152,6 +152,75 @@ CLAUSES: Final[tuple[Clause, ...]] = (
         " in the zone on the round, ahead of its ordinary interval.",
     ),
     Clause(
+        "label.site",
+        "a product goes where its label says and nowhere else",
+        "The label names the kinds of water the product may be put into. A"
+        " site whose habitat is not on the label cannot be treated with it at"
+        " any rate.",
+    ),
+    Clause(
+        "label.rate",
+        "the rate is inside the range, both ends",
+        "Under the bottom of the range is a treatment that will not work and"
+        " over the top is an offence. Neither is a judgement call.",
+    ),
+    Clause(
+        "label.season",
+        "a season cap is a cap on the place, not on the visit",
+        "The label limits what one acre or one structure may receive in a"
+        " season. What is left of that cap after earlier treatments limits"
+        " this one, and a cap that leaves less than the bottom of the rate"
+        " range leaves no legal treatment at all rather than a smaller one.",
+    ),
+    Clause(
+        "label.interval",
+        "applications are spaced the way the label spaces them",
+        "The days between two applications of one product at one place are the"
+        " label's to set. A site treated inside the interval waits, whatever"
+        " the dipper found.",
+    ),
+    Clause(
+        "label.shelf",
+        "a product off the shelf cannot be applied",
+        "A product withdrawn before the day of the application is not"
+        " available for it, whatever is still in the shed.",
+    ),
+    Clause(
+        "label.form",
+        "a formulation goes into water that takes it",
+        "A rate cannot be written, and an application cannot be made, for a"
+        " formulation the habitat does not take.",
+    ),
+    Clause(
+        "treat.extent",
+        "nothing is treated over more ground than it has",
+        "The extent treated is measured in the habitat's unit and cannot"
+        " exceed what the site was measured at.",
+    ),
+    Clause(
+        "stock.short",
+        "the shelf is the limit",
+        "A draw larger than what is left of a lot is a counting mistake, and"
+        " letting it through turns one mistake into a stock figure nobody can"
+        " reconcile.",
+    ),
+    Clause(
+        "stock.expired",
+        "an out of date lot is not stock",
+        "A lot past its date may be disposed of and may not be applied.",
+    ),
+    Clause(
+        "stock.unit",
+        "a lot is drawn in the unit it was received in",
+        "A draw in another dimension is not a smaller draw, it is a different substance.",
+    ),
+    Clause(
+        "stock.product",
+        "a lot belongs to one product",
+        "A treatment names a lot, and the product is read off the lot rather"
+        " than typed in beside it.",
+    ),
+    Clause(
         "site.extent",
         "a site is measured in the unit its habitat uses",
         "Structures are counted one at a time and ground is measured in acres."
