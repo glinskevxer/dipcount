@@ -15,6 +15,7 @@ from dipcount.cli import pool as pool_commands
 from dipcount.cli import product as product_commands
 from dipcount.cli import site as site_commands
 from dipcount.cli import trap as trap_commands
+from dipcount.cli import treat as treat_commands
 from dipcount.cli import virus as virus_commands
 from dipcount.cli import weather as weather_commands
 from dipcount.cli import zone as zone_commands
@@ -60,6 +61,7 @@ cli.add_command(pool_commands.pool)
 cli.add_command(virus_commands.arbo)
 cli.add_command(product_commands.product)
 cli.add_command(lot_commands.lot)
+cli.add_command(treat_commands.treat)
 cli.add_command(weather_commands.wx)
 
 
