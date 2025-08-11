@@ -283,6 +283,36 @@ CREATE INDEX treatment_by_lot ON treatment (lot);
 CREATE INDEX treatment_by_at ON treatment (at);
 """
 
+_V9 = """
+CREATE TABLE applicator (
+    id            TEXT PRIMARY KEY,
+    name          TEXT NOT NULL UNIQUE,
+    licence       TEXT NOT NULL UNIQUE,
+    grade         TEXT NOT NULL,
+    categories    TEXT NOT NULL,
+    certified_on  TEXT NOT NULL,
+    expires_on    TEXT NOT NULL,
+    supervisor    TEXT REFERENCES applicator (id),
+    left_on       TEXT,
+    note          TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX applicator_by_grade ON applicator (grade);
+CREATE INDEX applicator_by_expiry ON applicator (expires_on);
+
+CREATE TABLE credit (
+    seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+    applicator  TEXT NOT NULL REFERENCES applicator (id),
+    on_day      TEXT NOT NULL,
+    category    TEXT NOT NULL,
+    hours       REAL NOT NULL,
+    course      TEXT NOT NULL,
+    UNIQUE (applicator, on_day, course)
+);
+
+CREATE INDEX credit_by_applicator ON credit (applicator);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
@@ -292,6 +322,7 @@ MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(6, "the product shelf and the rates on the labels", _V6),
     Migration(7, "lots on the shelf and every draw off them", _V7),
     Migration(8, "treatments, and what went on what", _V8),
+    Migration(9, "applicators, their licences and their credits", _V9),
 )
 
 
