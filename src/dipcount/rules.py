@@ -221,6 +221,47 @@ CLAUSES: Final[tuple[Clause, ...]] = (
         " than typed in beside it.",
     ),
     Clause(
+        "licence.date",
+        "an expired licence makes no applications",
+        "The licence has a date and after it the holder applies nothing, of any kind, at any rate.",
+    ),
+    Clause(
+        "licence.category",
+        "the category has to cover the work",
+        "Permanent water needs an aquatic category and everything else in this"
+        " programme needs public health. A licence in another category is a"
+        " licence for other work.",
+    ),
+    Clause(
+        "licence.grade",
+        "a restricted use product needs a certified applicator",
+        "A technician may apply anything not restricted, working under a"
+        " certified applicator. A trainee applies nothing alone.",
+    ),
+    Clause(
+        "licence.credits",
+        "credits are for renewal, not for working today",
+        "Somebody short of credit hours in October is still licensed and still"
+        " working. They will not be renewed. Reporting them as unlicensed is"
+        " wrong and reporting them as fine is worse.",
+    ),
+    Clause(
+        "licence.supervision",
+        "only a certified applicator supervises",
+        "A technician cannot be somebody else's supervisor, whatever the"
+        " staffing that week looks like.",
+    ),
+    Clause(
+        "licence.renewal",
+        "a renewal runs forward",
+        "A new certification period ends after the one it replaces.",
+    ),
+    Clause(
+        "licence.left",
+        "somebody leaves once",
+        "A leaving date is written once and not written again.",
+    ),
+    Clause(
         "site.extent",
         "a site is measured in the unit its habitat uses",
         "Structures are counted one at a time and ground is measured in acres."
