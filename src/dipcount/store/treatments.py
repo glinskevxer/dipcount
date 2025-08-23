@@ -11,9 +11,12 @@ from dipcount.store import inventory, products, sites
 from dipcount.store.book import Book
 from dipcount.units import Quantity
 
-_COLUMNS = "id, site, product, lot, at, applicator, extent, amount, equipment, inspection, note"
+_COLUMNS = (
+    "id, site, product, lot, at, applicator, licence, extent, amount, equipment, inspection, note"
+)
 _VALUES = (
-    ":id, :site, :product, :lot, :at, :applicator, :extent, :amount, :equipment, :inspection, :note"
+    ":id, :site, :product, :lot, :at, :applicator, :licence, :extent, :amount,"
+    " :equipment, :inspection, :note"
 )
 
 
@@ -32,6 +35,7 @@ def write(
     extent: Quantity,
     amount: Quantity,
     *,
+    licence: str = "",
     equipment: str = "",
     inspection: str | None = None,
     note: str = "",
@@ -53,6 +57,7 @@ def write(
         lot=lot.id,
         at=at,
         applicator=applicator,
+        licence=licence,
         extent=extent,
         amount=amount,
         equipment=equipment,

@@ -313,6 +313,16 @@ CREATE TABLE credit (
 CREATE INDEX credit_by_applicator ON credit (applicator);
 """
 
+_V10 = """
+-- The use report has to carry the certification number that was in force on
+-- the day, not the one the applicator holds now. A renewal changes the number
+-- and must not change what last season's report says, so the number is copied
+-- onto the treatment rather than looked up through the licence register.
+ALTER TABLE treatment ADD COLUMN licence TEXT NOT NULL DEFAULT '';
+
+CREATE INDEX treatment_by_applicator ON treatment (applicator);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
@@ -323,6 +333,7 @@ MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(7, "lots on the shelf and every draw off them", _V7),
     Migration(8, "treatments, and what went on what", _V8),
     Migration(9, "applicators, their licences and their credits", _V9),
+    Migration(10, "the licence number in force when a treatment was made", _V10),
 )
 
 

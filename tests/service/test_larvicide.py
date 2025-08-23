@@ -6,8 +6,18 @@ import pytest
 
 from dipcount import clock, formulary
 from dipcount.errors import LabelViolation, RuleViolation
+from dipcount.model.applicator import AQUATIC, CERTIFIED, CORE, PUBLIC_HEALTH, TECHNICIAN
 from dipcount.service import larvicide
-from dipcount.store import Book, inventory, products, sites, treatments, upgrade, zones
+from dipcount.store import (
+    Book,
+    applicators,
+    inventory,
+    products,
+    sites,
+    treatments,
+    upgrade,
+    zones,
+)
 from dipcount.units import quantity, rate
 
 LISTED = dt.date(2025, 3, 1)
@@ -24,6 +34,25 @@ def district(book: Book) -> Book:
     formulary.stock(book, dt.date(2025, 1, 15))
     inventory.receive(book, "Bactilore G", "24G-1187", quantity("400 lb"), LISTED)
     inventory.receive(book, "Bactilore WSP", "24W-0801", quantity("500 each"), LISTED)
+    applicators.add(
+        book,
+        "K. Brennaman",
+        "PA-44192",
+        CERTIFIED,
+        (CORE, PUBLIC_HEALTH, AQUATIC),
+        dt.date(2024, 3, 1),
+        dt.date(2027, 3, 1),
+    )
+    applicators.add(
+        book,
+        "D. Uzoma",
+        "PA-44193",
+        TECHNICIAN,
+        (CORE, PUBLIC_HEALTH),
+        dt.date(2024, 3, 1),
+        dt.date(2027, 3, 1),
+        supervisor="AP-001",
+    )
     return book
 
 
@@ -95,14 +124,31 @@ def test_a_retired_site_cannot_be_treated(district: Book) -> None:
 
 
 def test_a_treatment_draws_the_product_off_the_lot(district: Book) -> None:
-    made = larvicide.treat(district, "K. Brennaman", "SI-0001", "LT-0001", AT)
+    made = larvicide.treat(district, "AP-001", "SI-0001", "LT-0001", AT)
     assert made.amount == quantity("37.5 lb")
     assert inventory.stock(district, "LT-0001").left == quantity("362.5 lb")
     assert [one.reference for one in inventory.for_reference(district, made.id)] == [made.id]
 
 
+def test_a_technician_cannot_make_an_application_in_aquatic_water(district: Book) -> None:
+    with pytest.raises(RuleViolation, match="aquatic"):
+        larvicide.treat(district, "AP-002", "SI-0001", "LT-0001", AT)
+
+
+def test_the_licence_number_in_force_is_copied_onto_the_record(district: Book) -> None:
+    made = larvicide.treat(district, "AP-001", "SI-0001", "LT-0001", AT)
+    assert made.licence == "PA-44192"
+    assert "PA-44192" in made.line()
+
+
+def test_a_renewal_does_not_change_what_last_season_says(district: Book) -> None:
+    made = larvicide.treat(district, "AP-001", "SI-0001", "LT-0001", AT)
+    applicators.renew(district, "AP-001", dt.date(2027, 3, 1), dt.date(2030, 3, 1))
+    assert treatments.get(district, made.id).licence == "PA-44192"
+
+
 def test_a_treatment_leaves_a_line_on_the_trail(district: Book) -> None:
-    made = larvicide.treat(district, "K. Brennaman", "SI-0001", "LT-0001", AT)
+    made = larvicide.treat(district, "AP-001", "SI-0001", "LT-0001", AT)
     from dipcount.store import audit
 
     lines = [one for one in audit.about(district, "SI-0001") if one.action == "treated"]
@@ -114,7 +160,7 @@ def test_a_work_card_naming_the_wrong_product_for_the_lot(district: Book) -> Non
     with pytest.raises(RuleViolation, match="not a lot"):
         larvicide.treat(
             district,
-            "K. B",
+            "AP-001",
             "SI-0001",
             "LT-0001",
             AT,
@@ -123,7 +169,7 @@ def test_a_work_card_naming_the_wrong_product_for_the_lot(district: Book) -> Non
 
 
 def test_a_work_card_naming_the_right_product_goes_through(district: Book) -> None:
-    made = larvicide.treat(district, "K. B", "SI-0001", "LT-0001", AT, product_id="Bactilore G")
+    made = larvicide.treat(district, "AP-001", "SI-0001", "LT-0001", AT, product_id="Bactilore G")
     assert made.product == "PD-0001"
 
 
@@ -137,25 +183,25 @@ def test_an_out_of_date_lot_is_refused(district: Book) -> None:
         expires_on=dt.date(2025, 3, 31),
     )
     with pytest.raises(RuleViolation, match="out of date"):
-        larvicide.treat(district, "K. B", "SI-0001", "LT-0003", AT)
+        larvicide.treat(district, "AP-001", "SI-0001", "LT-0003", AT)
 
 
 def test_a_lot_with_too_little_left_is_refused(district: Book) -> None:
     inventory.draw(district, "LT-0001", quantity("380 lb"), AT, "K. B")
     with pytest.raises(RuleViolation, match="left"):
-        larvicide.treat(district, "K. B", "SI-0001", "LT-0001", AT)
+        larvicide.treat(district, "AP-001", "SI-0001", "LT-0001", AT)
 
 
 def test_a_refused_treatment_draws_nothing(district: Book) -> None:
     before = inventory.stock(district, "LT-0001").left
     with pytest.raises(LabelViolation):
-        larvicide.treat(district, "K. B", "SI-0001", "LT-0001", AT, rate=rate("40 lb/acre"))
+        larvicide.treat(district, "AP-001", "SI-0001", "LT-0001", AT, rate=rate("40 lb/acre"))
     assert inventory.stock(district, "LT-0001").left == before
     assert district.count("treatment") == 0
 
 
 def test_the_label_interval_holds_a_second_treatment_back(district: Book) -> None:
-    larvicide.treat(district, "K. B", "SI-0001", "LT-0001", AT)
+    larvicide.treat(district, "AP-001", "SI-0001", "LT-0001", AT)
     soon = larvicide.plan(district, "SI-0001", "Bactilore G", dt.date(2025, 6, 8))
     later = larvicide.plan(district, "SI-0001", "Bactilore G", dt.date(2025, 6, 12))
     assert any(one.rule == "label.interval" for one in soon.refusals)
@@ -165,7 +211,7 @@ def test_the_label_interval_holds_a_second_treatment_back(district: Book) -> Non
 def test_the_season_cap_counts_what_has_already_gone_on(district: Book) -> None:
     made = larvicide.plan(district, "SI-0001", "Bactilore G", ON)
     assert made.season_used == quantity("0 lb")
-    larvicide.treat(district, "K. B", "SI-0001", "LT-0001", AT)
+    larvicide.treat(district, "AP-001", "SI-0001", "LT-0001", AT)
     after = larvicide.plan(district, "SI-0001", "Bactilore G", dt.date(2025, 6, 12))
     assert after.season_used == quantity("37.5 lb")
 
@@ -179,7 +225,7 @@ def test_the_cap_is_per_acre_and_not_per_site(district: Book) -> None:
             break
         larvicide.treat(
             district,
-            "K. B",
+            "AP-001",
             "SI-0001",
             "LT-0001",
             clock.moment(f"{when.isoformat()} 10:40"),
@@ -193,7 +239,7 @@ def put_on(district: Book, day: int, at_rate: str) -> None:
     when = dt.date(2025, 6, 1) + dt.timedelta(days=day)
     larvicide.treat(
         district,
-        "K. B",
+        "AP-001",
         "SI-0001",
         "LT-0001",
         clock.moment(f"{when.isoformat()} 10:40"),
@@ -249,7 +295,7 @@ def test_a_site_with_nothing_labelled_for_it_has_no_choices(district: Book) -> N
 
 
 def test_the_active_applied_at_a_site_adds_up_by_ingredient(district: Book) -> None:
-    larvicide.treat(district, "K. B", "SI-0001", "LT-0001", AT)
+    larvicide.treat(district, "AP-001", "SI-0001", "LT-0001", AT)
     found = larvicide.active_applied(district, "SI-0001", 2025)
     assert "Bacillus thuringiensis subspecies israelensis" in found
     assert found["Bacillus thuringiensis subspecies israelensis"] == quantity("1.6875 lb")

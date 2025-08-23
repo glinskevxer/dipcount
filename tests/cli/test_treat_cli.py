@@ -6,7 +6,8 @@ from tests.cli.conftest import Run
 
 
 @pytest.fixture
-def ready(started: Run) -> Run:
+def ready(crewed: Run) -> Run:
+    started = crewed
     started("product", "stock", "--on", "2025-01-15")
     started(
         "site",
@@ -85,7 +86,9 @@ def test_the_choices_for_a_site_are_ranked(ready: Run) -> None:
 
 
 def test_an_application_is_made_and_drawn_off_the_lot(ready: Run) -> None:
-    result = ready("treat", "apply", "SI-0001", "LT-0001", "--at", "2025-06-04 10:40")
+    result = ready(
+        "treat", "apply", "SI-0001", "LT-0001", "--by", "AP-001", "--at", "2025-06-04 10:40"
+    )
     assert "TX-250604-01" in result.output
     assert "37.5 lb over 6 acre" in result.output
     left = ready("lot", "show", "LT-0001")
@@ -98,6 +101,8 @@ def test_an_application_with_the_wrong_product_named_is_refused(ready: Run) -> N
         "apply",
         "SI-0001",
         "LT-0001",
+        "--by",
+        "AP-001",
         "--at",
         "2025-06-04 10:40",
         "--product",
@@ -113,6 +118,8 @@ def test_an_application_of_a_product_not_labelled_for_the_site(ready: Run) -> No
         "apply",
         "SI-0002",
         "LT-0001",
+        "--by",
+        "AP-001",
         "--at",
         "2025-06-04 10:40",
         expect=1,
@@ -121,12 +128,14 @@ def test_an_application_of_a_product_not_labelled_for_the_site(ready: Run) -> No
 
 
 def test_the_label_interval_holds_the_second_one_back(ready: Run) -> None:
-    ready("treat", "apply", "SI-0001", "LT-0001", "--at", "2025-06-04 10:40")
+    ready("treat", "apply", "SI-0001", "LT-0001", "--by", "AP-001", "--at", "2025-06-04 10:40")
     result = ready(
         "treat",
         "apply",
         "SI-0001",
         "LT-0001",
+        "--by",
+        "AP-001",
         "--at",
         "2025-06-08 10:40",
         expect=1,
@@ -135,8 +144,8 @@ def test_the_label_interval_holds_the_second_one_back(ready: Run) -> None:
 
 
 def test_the_treatments_over_a_window_are_listed(ready: Run) -> None:
-    ready("treat", "apply", "SI-0001", "LT-0001", "--at", "2025-06-04 10:40")
-    ready("treat", "apply", "SI-0002", "LT-0002", "--at", "2025-06-04 11:40")
+    ready("treat", "apply", "SI-0001", "LT-0001", "--by", "AP-001", "--at", "2025-06-04 10:40")
+    ready("treat", "apply", "SI-0002", "LT-0002", "--by", "AP-001", "--at", "2025-06-04 11:40")
     result = ready("treat", "list", "--from", "2025-06-01", "--to", "2025-06-30")
     assert "2 rows" in result.output
     result = ready(
@@ -153,15 +162,35 @@ def test_the_treatments_over_a_window_are_listed(ready: Run) -> None:
 
 
 def test_a_treatment_is_shown_in_full(ready: Run) -> None:
-    ready("treat", "apply", "SI-0001", "LT-0001", "--at", "2025-06-04 10:40")
+    ready("treat", "apply", "SI-0001", "LT-0001", "--by", "AP-001", "--at", "2025-06-04 10:40")
     result = ready("treat", "show", "TX-250604-01")
     assert "73049-20" in result.output
     assert "Bacillus thuringiensis" in result.output
     assert "1.6875 lb" in result.output
 
 
+def test_a_technician_cannot_treat_permanent_water(ready: Run) -> None:
+    result = ready(
+        "treat",
+        "apply",
+        "SI-0001",
+        "LT-0001",
+        "--by",
+        "AP-002",
+        "--at",
+        "2025-06-04 10:40",
+        expect=1,
+    )
+    assert result.exit_code != 0
+
+
+def test_the_licence_number_reaches_the_record(ready: Run) -> None:
+    ready("treat", "apply", "SI-0001", "LT-0001", "--by", "AP-001", "--at", "2025-06-04 10:40")
+    assert "PA-44192" in ready("treat", "show", "TX-250604-01").output
+
+
 def test_the_season_adds_the_active_up(ready: Run) -> None:
-    ready("treat", "apply", "SI-0001", "LT-0001", "--at", "2025-06-04 10:40")
+    ready("treat", "apply", "SI-0001", "LT-0001", "--by", "AP-001", "--at", "2025-06-04 10:40")
     result = ready("treat", "season", "SI-0001", "2025")
     assert "Bacillus thuringiensis" in result.output
     assert "1.6875 lb" in result.output

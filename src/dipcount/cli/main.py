@@ -8,6 +8,7 @@ from pathlib import Path
 import click
 
 from dipcount import __version__, clock
+from dipcount.cli import applicator as applicator_commands
 from dipcount.cli import book as book_commands
 from dipcount.cli import dip as dip_commands
 from dipcount.cli import lot as lot_commands
@@ -62,6 +63,7 @@ cli.add_command(virus_commands.arbo)
 cli.add_command(product_commands.product)
 cli.add_command(lot_commands.lot)
 cli.add_command(treat_commands.treat)
+cli.add_command(applicator_commands.crew)
 cli.add_command(weather_commands.wx)
 
 

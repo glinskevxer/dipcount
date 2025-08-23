@@ -3,7 +3,11 @@
 This is the record the state asks for and the record a lawsuit would ask for,
 so it holds everything needed to reconstruct the application without looking
 anything else up: which lot, over how much ground, how much went on, and who
-put it there.
+put it there under which certification number.
+
+The licence number is copied onto the record rather than read through the
+register. A renewal issues a new number, and last season's use report has to
+go on saying what was true last season.
 
 The rate is not stored. It is the amount over the extent, and storing it as
 well as both of those is storing the same fact twice in a form that can
@@ -34,6 +38,7 @@ class Treatment:
     applicator: str
     extent: Quantity
     amount: Quantity
+    licence: str = ""
     equipment: str = ""
     inspection: str | None = None
     note: str = ""
@@ -79,7 +84,8 @@ class Treatment:
         """One line for a use report."""
         return (
             f"{self.on.isoformat()}  {self.id}  {self.site}"
-            f"  {self.amount} over {self.extent}  {self.rate}  {self.applicator}"
+            f"  {self.amount} over {self.extent}  {self.rate}"
+            f"  {self.applicator}{f' ({self.licence})' if self.licence else ''}"
         )
 
     @classmethod
@@ -95,6 +101,7 @@ class Treatment:
             applicator=str(row["applicator"]),
             extent=Quantity.parse(str(row["extent"])),
             amount=Quantity.parse(str(row["amount"])),
+            licence=str(row["licence"]),
             equipment=str(row["equipment"]),
             inspection=None if inspection is None else str(inspection),
             note=str(row["note"]),
@@ -111,6 +118,7 @@ class Treatment:
             "applicator": self.applicator,
             "extent": str(self.extent),
             "amount": str(self.amount),
+            "licence": self.licence,
             "equipment": self.equipment,
             "inspection": self.inspection,
             "note": self.note,

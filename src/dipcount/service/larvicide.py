@@ -25,12 +25,14 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 
 from dipcount import clock
-from dipcount.errors import LabelViolation, RuleViolation
+from dipcount.errors import RuleViolation
 from dipcount.model.lot import APPLIED, Lot
 from dipcount.model.product import Label, Product
 from dipcount.model.site import Site
 from dipcount.model.treatment import Treatment
-from dipcount.store import audit, inventory, products, sites, treatments
+from dipcount.rules import Refusal
+from dipcount.service import licensing
+from dipcount.store import applicators, audit, inventory, products, sites, treatments
 from dipcount.store.book import Book
 from dipcount.units import Quantity, Rate
 
@@ -38,20 +40,6 @@ LOW = "low"
 MIDDLE = "middle"
 HIGH = "high"
 STRENGTHS = (LOW, MIDDLE, HIGH)
-
-
-@dataclass(frozen=True)
-class Refusal:
-    """One reason an application cannot be made."""
-
-    rule: str
-    detail: str
-
-    def raise_it(self) -> None:
-        """Raise this refusal as the error type its clause calls for."""
-        if self.rule.startswith("label."):
-            raise LabelViolation(self.rule, self.detail)
-        raise RuleViolation(self.rule, self.detail)
 
 
 @dataclass(frozen=True)
@@ -264,7 +252,7 @@ def _lot_refusals(book: Book, lot: Lot, product: Product, on: dt.date, amount: Q
 
 def treat(
     book: Book,
-    actor: str,
+    applicator_id: str,
     site_id: str,
     lot_id: str,
     at: dt.datetime,
@@ -282,7 +270,13 @@ def treat(
     The product is read off the lot rather than typed in beside it. A caller
     that has both on a work card can pass ``product_id`` as well, and the two
     are checked against each other before anything else happens.
+
+    The applicator is a licence holder, not a name typed on a card. Whether
+    they may make this particular application depends on the site and the
+    product as much as on the licence, so the check happens here where all
+    three are to hand.
     """
+    holder = applicators.resolve(book, applicator_id)
     lot = inventory.get(book, lot_id)
     product = products.get(book, lot.product)
     if product_id is not None and products.resolve(book, product_id).id != product.id:
@@ -293,6 +287,9 @@ def treat(
     on = clock.in_zone(at).date()
     made = plan(book, site_id, product.id, on, extent=extent, strength=strength, rate=rate)
     made.check()
+    refused = licensing.check(book, holder.id, site_id, product.id, on)
+    if refused is not None:
+        refused.raise_it()
     assert made.amount is not None
     _lot_refusals(book, lot, product, on, made.amount)
     with book.writing():
@@ -301,9 +298,10 @@ def treat(
             site_id,
             lot.id,
             at,
-            actor,
+            holder.name,
             made.extent,
             made.amount,
+            licence=holder.licence,
             equipment=equipment,
             inspection=inspection,
             note=note,
@@ -313,13 +311,13 @@ def treat(
             lot.id,
             made.amount,
             at,
-            actor,
+            holder.name,
             reason=APPLIED,
             reference=record.id,
         )
         audit.record(
             book,
-            actor,
+            holder.name,
             "treated",
             site_id,
             f"{record.id}: {made.amount} of {product.name} at {made.rate}",

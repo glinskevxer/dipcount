@@ -23,7 +23,37 @@ from typing import Final
 
 from dipcount import habitat as hb
 from dipcount import species
-from dipcount.errors import NotFound
+from dipcount.errors import LabelViolation, NotFound, RuleViolation
+
+
+@dataclass(frozen=True)
+class Refusal:
+    """One named reason something may not be done.
+
+    A refusal is a value rather than an exception, because most of the time
+    the caller wants to gather every reason and show them together. When one
+    does have to be raised, the clause decides the type: anything under
+    ``label`` is federal law and gets its own class so nothing catches it by
+    accident along with the ordinary refusals.
+    """
+
+    rule: str
+    detail: str
+
+    @property
+    def clause(self) -> Clause:
+        """The rule book entry this refusal names."""
+        return clause(self.rule)
+
+    def raise_it(self) -> None:
+        """Raise this refusal as the error type its clause calls for."""
+        if self.rule.startswith("label."):
+            raise LabelViolation(self.rule, self.detail)
+        raise RuleViolation(self.rule, self.detail)
+
+    def line(self) -> str:
+        """One line naming the clause and what it said."""
+        return f"[{self.rule}] {self.detail}"
 
 
 @dataclass(frozen=True)

@@ -23,7 +23,7 @@ from dipcount import habitat as hb
 from dipcount.model.applicator import AQUATIC, PUBLIC_HEALTH, Applicator
 from dipcount.model.product import ADULTICIDE, Product
 from dipcount.model.site import Site
-from dipcount.service.larvicide import Refusal
+from dipcount.rules import Refusal
 from dipcount.store import applicators, products, sites
 from dipcount.store.book import Book
 

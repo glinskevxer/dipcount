@@ -42,3 +42,45 @@ def started(run: Run) -> Run:
     run("zone", "add", "north", "--supervisor", "R. Vandeburg")
     run("zone", "add", "south", "--supervisor", "T. Okwuosa")
     return run
+
+
+@pytest.fixture
+def crewed(started: Run) -> Run:
+    """A started book with one certified applicator and one technician."""
+    started(
+        "crew",
+        "add",
+        "K. Brennaman",
+        "PA-44192",
+        "--grade",
+        "certified",
+        "--category",
+        "core",
+        "--category",
+        "public health",
+        "--category",
+        "aquatic",
+        "--certified",
+        "2024-03-01",
+        "--expires",
+        "2027-03-01",
+    )
+    started(
+        "crew",
+        "add",
+        "D. Uzoma",
+        "PA-44193",
+        "--grade",
+        "technician",
+        "--category",
+        "core",
+        "--category",
+        "public health",
+        "--certified",
+        "2024-03-01",
+        "--expires",
+        "2027-03-01",
+        "--under",
+        "AP-001",
+    )
+    return started

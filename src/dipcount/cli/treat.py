@@ -117,6 +117,7 @@ def choices(desk: Desk, site_id: str, on_text: str | None) -> None:
 @treat.command("apply")
 @click.argument("site_id")
 @click.argument("lot_id")
+@click.option("--by", "applicator", required=True, help="Which licence holder made it.")
 @click.option("--at", "at_text", default=None, help="When it went on.")
 @click.option("--extent", default=None, help="How much of the site, if not all of it.")
 @click.option(
@@ -135,6 +136,7 @@ def apply(
     desk: Desk,
     site_id: str,
     lot_id: str,
+    applicator: str,
     at_text: str | None,
     extent: str | None,
     strength: str,
@@ -150,7 +152,7 @@ def apply(
         site = sites.get(opened, site_id)
         made = larvicide.treat(
             opened,
-            desk.actor,
+            applicator,
             site_id,
             lot_id,
             moment_or_now(at_text, desk.zone_name),
@@ -236,6 +238,7 @@ def show(desk: Desk, treatment_id: str) -> None:
             ("at", clock.stamp(made.at, desk.zone_name)),
             ("week", made.week),
             ("applicator", made.applicator),
+            ("licence", made.licence or "-"),
             ("extent", str(made.extent)),
             ("amount", str(made.amount)),
             ("rate", str(made.rate)),
