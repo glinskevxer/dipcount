@@ -35,8 +35,7 @@ def add_station(
     note: str,
 ) -> None:
     """Put a weather station on the books."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = store.add_station(
             opened,
             name,
@@ -45,8 +44,6 @@ def add_station(
             elevation=elevation,
             note=note,
         )
-    finally:
-        opened.close()
     click.echo(f"{made.id}  {made.name}")
 
 
@@ -55,12 +52,9 @@ def add_station(
 @pass_desk
 def list_stations(desk: Desk, zone_name: str | None) -> None:
     """Every station the district reads."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
         found = store.all_stations(opened, zone_id=zone_id)
-    finally:
-        opened.close()
     echo_rows(
         ["id", "name", "zone", "opened", "closed"],
         [
@@ -82,15 +76,12 @@ def list_stations(desk: Desk, zone_name: str | None) -> None:
 @pass_desk
 def close_station(desk: Desk, station_id: str, on_text: str | None) -> None:
     """Stop reading a station."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         closed = store.close_station(
             opened,
             station_id,
             day_or_today(on_text, desk.zone_name),
         )
-    finally:
-        opened.close()
     click.echo(f"{closed.id} closed {closed.closed_on}")
 
 
@@ -114,8 +105,7 @@ def record(
     note: str,
 ) -> None:
     """Write one day's reading."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = store.record(
             opened,
             station,
@@ -126,8 +116,6 @@ def record(
             wind_mph=wind,
             note=note,
         )
-    finally:
-        opened.close()
     click.echo(f"{made.id}  {made.on}  {made.high_f:g}/{made.low_f:g}  {made.degree_days()} units")
 
 
@@ -137,12 +125,9 @@ def record(
 def day(desk: Desk, on_text: str | None) -> None:
     """Every station's reading for one day."""
     on = day_or_today(on_text, desk.zone_name)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.on_day(opened, on)
         names = {one.id: one.name for one in store.all_stations(opened)}
-    finally:
-        opened.close()
     echo_rows(
         ["station", "name", "high", "low", "rain", "wind", "units"],
         [
@@ -178,8 +163,7 @@ def units(
     strict: bool,
 ) -> None:
     """Add up the heat units over a window."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = service.accumulate(
             opened,
             station,
@@ -189,8 +173,6 @@ def units(
             method=method,
             strict=strict,
         )
-    finally:
-        opened.close()
     echo_pairs(
         [
             ("station", found.station),
@@ -212,11 +194,8 @@ def units(
 def forecast(desk: Desk, station: str, laid_text: str, method: str) -> None:
     """When a brood laid on a day should be flying."""
     laid = clock.day(laid_text)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = service.guild_forecast(opened, station, laid, method=method)
-    finally:
-        opened.close()
     echo_rows(
         ["guild", "units needed", "flying", "habitats"],
         [
@@ -243,11 +222,8 @@ def forecast(desk: Desk, station: str, laid_text: str, method: str) -> None:
 def flood(desk: Desk, on_text: str | None, within: int) -> None:
     """Floodwater sites whose zone has had enough rain to matter."""
     on = day_or_today(on_text, desk.zone_name)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = service.flooded(opened, on, within=within)
-    finally:
-        opened.close()
     click.echo(f"rain of {rules.FLOOD_INCHES} inch or more in the last {within} days\n")
     echo_rows(
         ["site", "zone", "name", "habitat", "extent"],
@@ -264,12 +240,9 @@ def flood(desk: Desk, on_text: str | None, within: int) -> None:
 def rain(desk: Desk, station: str, start_text: str, end_text: str, at_least: float) -> None:
     """The days that put enough rain down to matter, and the total."""
     start, end = clock.day(start_text), clock.day(end_text)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         wet = service.wet_days(opened, station, start, end, at_least=Decimal(str(at_least)))
         total = service.rainfall(opened, station, start, end)
-    finally:
-        opened.close()
     echo_rows(
         ["day", "rain", "high", "low"],
         [

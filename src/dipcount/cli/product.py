@@ -24,11 +24,8 @@ def product() -> None:
 @pass_desk
 def stock(desk: Desk, on_text: str | None) -> None:
     """Put the starting shelf in the book, leaving anything already there."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         added = formulary.stock(opened, day_or_today(on_text, desk.zone_name))
-    finally:
-        opened.close()
     if not added:
         click.echo("the shelf was already stocked")
         return
@@ -65,8 +62,7 @@ def add(
     note: str,
 ) -> None:
     """Put a product on the shelf."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = store.add(
             opened,
             name,
@@ -82,8 +78,6 @@ def add(
             reentry=reentry,
             note=note,
         )
-    finally:
-        opened.close()
     click.echo(f"{made.id}  {made.name}  {made.registration}")
 
 
@@ -106,8 +100,7 @@ def label(
 ) -> None:
     """Write one habitat's rate range onto a product's label."""
     per = hb.habitat(habitat).extent_unit
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.resolve(opened, product_name)
         after = store.label(
             opened,
@@ -118,8 +111,6 @@ def label(
             season_max=None if season_max is None else read_quantity(season_max),
             interval_days=interval,
         )
-    finally:
-        opened.close()
     entry = after.label_for(habitat)
     assert entry is not None
     click.echo(f"{after.id}  {entry.line()}")
@@ -132,14 +123,11 @@ def label(
 @pass_desk
 def list_them(desk: Desk, purpose: str | None, form: str | None, on_text: str | None) -> None:
     """Every product on the shelf."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.all_products(opened, purpose=purpose, form=form)
         if on_text is not None:
             on = day_or_today(on_text, desk.zone_name)
             found = [one for one in found if one.on_shelf(on)]
-    finally:
-        opened.close()
     echo_rows(
         ["id", "name", "registration", "active", "percent", "form", "purpose", "rup"],
         [
@@ -163,11 +151,8 @@ def list_them(desk: Desk, purpose: str | None, form: str | None, on_text: str | 
 @pass_desk
 def show(desk: Desk, product_name: str) -> None:
     """One product and everything its label says."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.resolve(opened, product_name)
-    finally:
-        opened.close()
     echo_pairs(
         [
             ("id", found.id),
@@ -212,8 +197,7 @@ def show(desk: Desk, product_name: str) -> None:
 def for_habitat(desk: Desk, habitat: str, purpose: str | None, on_text: str | None) -> None:
     """Every product whose label covers one kind of water."""
     on = None if on_text is None else day_or_today(on_text, desk.zone_name)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.for_habitat(opened, habitat, purpose=purpose, on=on)
         rows = []
         for one in found:
@@ -229,8 +213,6 @@ def for_habitat(desk: Desk, habitat: str, purpose: str | None, on_text: str | No
                     str(entry.interval_days),
                 ],
             )
-    finally:
-        opened.close()
     click.echo(f"{hb.habitat(habitat).name}\n")
     echo_rows(["id", "name", "form", "purpose", "rate", "interval"], rows)
 
@@ -242,10 +224,7 @@ def for_habitat(desk: Desk, habitat: str, purpose: str | None, on_text: str | No
 @pass_desk
 def withdraw(desk: Desk, product_name: str, on_text: str | None, why: str) -> None:
     """Take a product off the shelf."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.resolve(opened, product_name)
         gone = store.withdraw(opened, found.id, day_or_today(on_text, desk.zone_name), why)
-    finally:
-        opened.close()
     click.echo(f"{gone.id} withdrawn {gone.withdrawn_on}")

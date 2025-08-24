@@ -52,8 +52,7 @@ def record(
         Tally("" if code in ("-", "") else code.upper(), stage.upper(), int(number))
         for code, stage, number in counts
     )
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made, found = survey.inspect(
             opened,
             desk.actor,
@@ -64,8 +63,6 @@ def record(
             tallies=tallies,
             note=note,
         )
-    finally:
-        opened.close()
     click.echo(f"{made.id}  {found.line()}")
     for sentence in found.why():
         click.echo(f"  {sentence}")
@@ -78,12 +75,9 @@ def record(
 def due(desk: Desk, on_text: str | None, zone_name: str | None) -> None:
     """Every site that is due for a visit."""
     on = day_or_today(on_text, desk.zone_name)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
         waiting = survey.due(opened, on, zone_id=zone_id)
-    finally:
-        opened.close()
     echo_rows(
         ["site", "zone", "name", "habitat", "due", "days"],
         [
@@ -105,13 +99,10 @@ def due(desk: Desk, on_text: str | None, zone_name: str | None) -> None:
 @pass_desk
 def show(desk: Desk, inspection_id: str) -> None:
     """One inspection, its tallies and the verdict it produced."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = inspections.get(opened, inspection_id)
         site = sites.get(opened, made.site)
         found = survey.assess(site, made)
-    finally:
-        opened.close()
     echo_pairs(
         [
             ("inspection", made.id),
@@ -150,12 +141,9 @@ def show(desk: Desk, inspection_id: str) -> None:
 def by_site(desk: Desk, site_id: str, since_text: str | None) -> None:
     """Every visit to one site, judged again."""
     since = None if since_text is None else clock.day(since_text)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = inspections.for_site(opened, site_id, since=since)
         found = survey.history(opened, site_id, since=since)
-    finally:
-        opened.close()
     echo_rows(
         ["inspection", "day", "dips", "larvae", "pupae", "per dip", "verdict"],
         [
@@ -179,8 +167,7 @@ def by_site(desk: Desk, site_id: str, since_text: str | None) -> None:
 def by_week(desk: Desk, label: str) -> None:
     """Every visit made in one reporting week."""
     year, week = clock.read_week(label)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = inspections.in_week(opened, year, week)
         rows = []
         for one in made:
@@ -197,8 +184,6 @@ def by_week(desk: Desk, label: str) -> None:
                     found.verdict,
                 ],
             )
-    finally:
-        opened.close()
     click.echo(f"{label}  {clock.week_start(year, week)} to {clock.week_end(year, week)}\n")
     echo_rows(["day", "inspection", "site", "dips", "larvae", "per dip", "verdict"], rows)
 

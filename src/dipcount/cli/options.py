@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypeVar
@@ -28,17 +29,41 @@ class Desk:
 
     def open(self) -> Book:
         """Open the book and refuse it if it is not migrated."""
-        book = Book(self.path)
+        opened = Book(self.path)
         try:
-            require_ready(book)
+            require_ready(opened)
         except BaseException:
-            book.close()
+            opened.close()
             raise
-        return book
+        return opened
 
     def create(self) -> Book:
         """Open the book, making the file if it is not there."""
         return Book.create(self.path)
+
+    @contextmanager
+    def book(self) -> Iterator[Book]:
+        """The migrated book, closed however the command ends.
+
+        Every command used to open the book, wrap its work in a try, and
+        close in a finally. Four of them got the finally wrong at some point,
+        which on 3.13 shows up as a ResourceWarning against whichever command
+        the test runner reached next rather than against the one that leaked.
+        """
+        opened = self.open()
+        try:
+            yield opened
+        finally:
+            opened.close()
+
+    @contextmanager
+    def new_book(self) -> Iterator[Book]:
+        """The book, made if it is not there, closed however this ends."""
+        opened = self.create()
+        try:
+            yield opened
+        finally:
+            opened.close()
 
 
 pass_desk = click.make_pass_decorator(Desk)

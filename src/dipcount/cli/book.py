@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from contextlib import closing
+
 import click
 
 from dipcount.cli.options import Desk, echo_pairs, echo_rows, pass_desk
@@ -18,8 +20,7 @@ def book() -> None:
 @pass_desk
 def init(desk: Desk) -> None:
     """Make the book if it is not there, and bring it up to date."""
-    opened = desk.create()
-    try:
+    with desk.new_book() as opened:
         ran = upgrade(opened)
         if ran:
             for step in ran:
@@ -27,19 +28,14 @@ def init(desk: Desk) -> None:
         else:
             click.echo("already up to date")
         click.echo(f"{desk.path} is at schema {opened.version}")
-    finally:
-        opened.close()
 
 
 @book.command("counts")
 @pass_desk
 def counts(desk: Desk) -> None:
     """How many rows each table holds."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         rows = [[name, str(opened.count(name))] for name in opened.tables()]
-    finally:
-        opened.close()
     echo_rows(["table", "rows"], rows)
 
 
@@ -47,8 +43,7 @@ def counts(desk: Desk) -> None:
 @pass_desk
 def check(desk: Desk) -> None:
     """Say whether the book is sound and up to date."""
-    opened = Book(desk.path)
-    try:
+    with closing(Book(desk.path)) as opened:
         waiting = pending(opened)
         echo_pairs(
             [
@@ -59,5 +54,3 @@ def check(desk: Desk) -> None:
                 ("tables", str(len(opened.tables()))),
             ],
         )
-    finally:
-        opened.close()

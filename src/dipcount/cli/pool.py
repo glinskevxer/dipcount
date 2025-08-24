@@ -35,8 +35,7 @@ def submit(
     note: str,
 ) -> None:
     """Send one vial of one species out of one jar."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = store.submit(
             opened,
             collection_id,
@@ -48,8 +47,6 @@ def submit(
         )
         left = traps.get_collection(opened, collection_id).females_of(code.upper())
         already = store.pooled(opened, collection_id, code.upper())
-    finally:
-        opened.close()
     click.echo(f"{made.id}  {made.size} {made.species}  {already} of {left} pooled")
 
 
@@ -70,11 +67,8 @@ def result(
 ) -> None:
     """Write one virus result against one pool."""
     tested = None if outcome == PENDING else day_or_today(on_text, desk.zone_name)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         after = store.report(opened, pool_id, virus_name, outcome, tested, ct)
-    finally:
-        opened.close()
     click.echo(f"{after.id}  {virus_name}  {outcome}")
 
 
@@ -83,13 +77,10 @@ def result(
 @pass_desk
 def show(desk: Desk, pool_id: str) -> None:
     """One pool and everything the laboratory has said about it."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.get(opened, pool_id)
         collection = traps.get_collection(opened, found.collection)
         trap = traps.get(opened, collection.trap)
-    finally:
-        opened.close()
     echo_pairs(
         [
             ("pool", found.id),
@@ -129,11 +120,8 @@ def show(desk: Desk, pool_id: str) -> None:
 @pass_desk
 def waiting(desk: Desk, virus_name: str) -> None:
     """Every pool with nothing back yet for a virus."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.outstanding(opened, virus_name)
-    finally:
-        opened.close()
     echo_rows(
         ["pool", "collection", "species", "size", "submitted", "lab"],
         [
@@ -157,11 +145,8 @@ def waiting(desk: Desk, virus_name: str) -> None:
 def by_week(desk: Desk, label: str, virus_name: str) -> None:
     """Every pool made out of a jar pulled in one reporting week."""
     year, week = clock.read_week(label)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = service.pools_in_week(opened, year, week)
-    finally:
-        opened.close()
     echo_rows(
         ["pool", "collection", "species", "size", "outcome", "counts"],
         [

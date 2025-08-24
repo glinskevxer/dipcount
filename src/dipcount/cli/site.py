@@ -46,8 +46,7 @@ def add(
     note: str,
 ) -> None:
     """Put a piece of water on the inspection list."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = district.list_site(
             opened,
             desk.actor,
@@ -61,8 +60,6 @@ def add(
             longitude=longitude,
             note=note,
         )
-    finally:
-        opened.close()
     click.echo(f"{made.id}  {made.name}  {made.kind.name}  {made.extent}")
 
 
@@ -78,15 +75,12 @@ def list_them(
     open_text: str | None,
 ) -> None:
     """The site list."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
         found = sites.all_sites(opened, zone_id=zone_id, habitat=habitat)
         if open_text is not None:
             on = day_or_today(open_text, desk.zone_name)
             found = [one for one in found if one.is_open(on)]
-    finally:
-        opened.close()
     echo_rows(
         ["id", "zone", "name", "habitat", "extent"],
         [[one.id, one.zone, one.name, one.habitat, str(one.extent)] for one in found],
@@ -98,12 +92,9 @@ def list_them(
 @pass_desk
 def show(desk: Desk, site_id: str) -> None:
     """One site in full, with its trail."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = sites.get(opened, site_id)
         history = district.site_history(opened, site_id)
-    finally:
-        opened.close()
     echo_pairs(
         [
             ("id", found.id),
@@ -129,8 +120,7 @@ def show(desk: Desk, site_id: str) -> None:
 @pass_desk
 def retire(desk: Desk, site_id: str, on_text: str | None, why: str) -> None:
     """Take a site off the inspection list."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         gone = district.retire_site(
             opened,
             desk.actor,
@@ -138,8 +128,6 @@ def retire(desk: Desk, site_id: str, on_text: str | None, why: str) -> None:
             day_or_today(on_text, desk.zone_name),
             why,
         )
-    finally:
-        opened.close()
     click.echo(f"{gone.id} retired {gone.retired_on}")
 
 
@@ -149,11 +137,8 @@ def retire(desk: Desk, site_id: str, on_text: str | None, why: str) -> None:
 @pass_desk
 def remeasure(desk: Desk, site_id: str, extent: str) -> None:
     """Write a new extent against a site."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         changed = district.remeasure_site(opened, desk.actor, site_id, read_quantity(extent))
-    finally:
-        opened.close()
     click.echo(f"{changed.id} now {changed.extent}")
 
 
@@ -163,9 +148,6 @@ def remeasure(desk: Desk, site_id: str, extent: str) -> None:
 @pass_desk
 def move(desk: Desk, site_id: str, zone_name: str) -> None:
     """Move a site into another zone."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         moved = district.move_site(opened, desk.actor, site_id, zone_name)
-    finally:
-        opened.close()
     click.echo(f"{moved.id} now in {moved.zone}")

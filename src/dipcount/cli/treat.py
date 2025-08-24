@@ -52,8 +52,7 @@ def plan(
 ) -> None:
     """Say what may go on a site, and what stops it if anything does."""
     on = day_or_today(on_text, desk.zone_name)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         site = sites.get(opened, site_id)
         made = larvicide.plan(
             opened,
@@ -65,8 +64,6 @@ def plan(
             rate=_rate(rate_text, site.extent.unit),
         )
         product = products.resolve(opened, product_name)
-    finally:
-        opened.close()
     echo_pairs(
         [
             ("site", f"{site.id} {site.name}"),
@@ -92,12 +89,9 @@ def plan(
 def choices(desk: Desk, site_id: str, on_text: str | None) -> None:
     """Every product that could go on a site, allowed ones first."""
     on = day_or_today(on_text, desk.zone_name)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = larvicide.choices(opened, site_id, on)
         names = {one.id: one.name for one in products.all_products(opened)}
-    finally:
-        opened.close()
     echo_rows(
         ["product", "name", "rate", "amount", "allowed", "why not"],
         [
@@ -147,8 +141,7 @@ def apply(
     note: str,
 ) -> None:
     """Make one application and draw the product off a lot."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         site = sites.get(opened, site_id)
         made = larvicide.treat(
             opened,
@@ -164,8 +157,6 @@ def apply(
             inspection=inspection,
             note=note,
         )
-    finally:
-        opened.close()
     click.echo(f"{made.id}  {made.line()}")
 
 
@@ -183,8 +174,7 @@ def list_them(
     product_name: str | None,
 ) -> None:
     """Every treatment over a window."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         product_id = None if product_name is None else products.resolve(opened, product_name).id
         found = treatments.between(
             opened,
@@ -194,8 +184,6 @@ def list_them(
             product_id=product_id,
         )
         names = {one.id: one.name for one in products.all_products(opened)}
-    finally:
-        opened.close()
     echo_rows(
         ["day", "treatment", "site", "product", "extent", "amount", "rate", "by"],
         [
@@ -219,13 +207,10 @@ def list_them(
 @pass_desk
 def show(desk: Desk, treatment_id: str) -> None:
     """One treatment in full."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = treatments.get(opened, treatment_id)
         site = sites.get(opened, made.site)
         product = products.get(opened, made.product)
-    finally:
-        opened.close()
     echo_pairs(
         [
             ("treatment", made.id),
@@ -256,12 +241,9 @@ def show(desk: Desk, treatment_id: str) -> None:
 @pass_desk
 def season(desk: Desk, site_id: str, year: int) -> None:
     """How much active ingredient a site took in a season."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = larvicide.active_applied(opened, site_id, year)
         site = sites.get(opened, site_id)
-    finally:
-        opened.close()
     click.echo(f"{site.id} {site.name}, {site.extent}, {year}\n")
     echo_rows(
         ["active ingredient", "applied"],

@@ -62,8 +62,7 @@ def add(
     note: str,
 ) -> None:
     """Put a trap station on the books."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = store.add(
             opened,
             zone_name,
@@ -74,8 +73,6 @@ def add(
             longitude=longitude,
             note=note,
         )
-    finally:
-        opened.close()
     click.echo(f"{made.id}  {made.name}  {made.sort.name}")
 
 
@@ -85,12 +82,9 @@ def add(
 @pass_desk
 def list_them(desk: Desk, zone_name: str | None, kind: str | None) -> None:
     """Every trap station."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
         found = store.all_traps(opened, zone_id=zone_id, kind=kind)
-    finally:
-        opened.close()
     echo_rows(
         ["id", "name", "zone", "kind", "listed", "retired"],
         [
@@ -114,11 +108,8 @@ def list_them(desk: Desk, zone_name: str | None, kind: str | None) -> None:
 @pass_desk
 def retire(desk: Desk, trap_id: str, on_text: str | None, why: str) -> None:
     """Take a trap off the round."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         gone = store.retire(opened, trap_id, day_or_today(on_text, desk.zone_name), why)
-    finally:
-        opened.close()
     click.echo(f"{gone.id} retired {gone.retired_on}")
 
 
@@ -148,8 +139,7 @@ def collect(
 ) -> None:
     """Record one collection off a trap."""
     jar = tuple(Catch(code.upper(), sex.upper(), int(number)) for code, sex, number in catches)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = trapping.collect(
             opened,
             desk.actor,
@@ -160,8 +150,6 @@ def collect(
             catches=jar,
             note=note,
         )
-    finally:
-        opened.close()
     if made.worked:
         click.echo(
             f"{made.id}  {made.females} females and {made.males} males"
@@ -179,8 +167,7 @@ def collect(
 def due(desk: Desk, on_text: str | None, every: int, zone_name: str | None) -> None:
     """Every trap that has not been run lately."""
     on = day_or_today(on_text, desk.zone_name)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
         waiting = trapping.due(opened, on, every=every, zone_id=zone_id)
         rows = []
@@ -195,8 +182,6 @@ def due(desk: Desk, on_text: str | None, every: int, zone_name: str | None) -> N
                     str((on - last.on).days) if last else "-",
                 ],
             )
-    finally:
-        opened.close()
     echo_rows(["id", "name", "kind", "last run", "days"], rows)
 
 
@@ -205,12 +190,9 @@ def due(desk: Desk, on_text: str | None, every: int, zone_name: str | None) -> N
 @pass_desk
 def show(desk: Desk, collection_id: str) -> None:
     """One collection and what was in the jar."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = store.get_collection(opened, collection_id)
         which = store.get(opened, made.trap)
-    finally:
-        opened.close()
     echo_pairs(
         [
             ("collection", made.id),
@@ -260,8 +242,7 @@ def index(
 ) -> None:
     """The index for one reporting week, against the seasons before it."""
     year, week = clock.read_week(label)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
         found = trapping.trend(
             opened,
@@ -272,8 +253,6 @@ def index(
             code=code.upper(),
             seasons=seasons,
         )
-    finally:
-        opened.close()
     ratio = found.ratio
     echo_pairs(
         [
@@ -311,12 +290,9 @@ def season(
     zone_name: str | None,
 ) -> None:
     """One index for every week of a season."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
         weeks = trapping.season(opened, year, kind, first=first, last=last, zone_id=zone_id)
-    finally:
-        opened.close()
     echo_rows(
         ["week", "collections", "females", "nights", "index", "over"],
         [

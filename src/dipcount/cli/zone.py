@@ -21,11 +21,8 @@ def zone() -> None:
 @pass_desk
 def add(desk: Desk, name: str, supervisor: str, note: str) -> None:
     """Open a new zone."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = district.list_zone(opened, desk.actor, name, supervisor, note)
-    finally:
-        opened.close()
     click.echo(f"{made.id}  {made.name}")
 
 
@@ -33,11 +30,8 @@ def add(desk: Desk, name: str, supervisor: str, note: str) -> None:
 @pass_desk
 def list_them(desk: Desk) -> None:
     """Every zone the district runs."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = zones.all_zones(opened)
-    finally:
-        opened.close()
     echo_rows(
         ["id", "name", "supervisor"],
         [[one.id, one.name, one.supervisor or "-"] for one in found],
@@ -49,11 +43,8 @@ def list_them(desk: Desk) -> None:
 @pass_desk
 def show(desk: Desk, name: str) -> None:
     """One zone in full."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = zones.resolve(opened, name)
-    finally:
-        opened.close()
     echo_pairs(
         [
             ("id", found.id),

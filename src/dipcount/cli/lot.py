@@ -44,8 +44,7 @@ def receive(
     note: str,
 ) -> None:
     """Book a delivery in."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = store.receive(
             opened,
             product_name,
@@ -56,8 +55,6 @@ def receive(
             held_at=held_at,
             note=note,
         )
-    finally:
-        opened.close()
     click.echo(f"{made.id}  {made.code}  {made.quantity}")
 
 
@@ -66,13 +63,10 @@ def receive(
 @pass_desk
 def list_them(desk: Desk, product_name: str | None) -> None:
     """Every lot the shed has had, with what is left of it."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         product_id = None if product_name is None else products.resolve(opened, product_name).id
         holdings = store.holdings(opened, product_id=product_id)
         names = {one.id: one.name for one in products.all_products(opened)}
-    finally:
-        opened.close()
     echo_rows(
         ["lot", "product", "code", "received", "expires", "in", "left"],
         [
@@ -95,13 +89,10 @@ def list_them(desk: Desk, product_name: str | None) -> None:
 @pass_desk
 def show(desk: Desk, lot_id: str) -> None:
     """One lot, what is left of it, and every draw off it."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         holding = store.stock(opened, lot_id)
         made = store.draws(opened, lot_id)
         product = products.get(opened, holding.lot.product)
-    finally:
-        opened.close()
     echo_pairs(
         [
             ("lot", holding.lot.id),
@@ -149,8 +140,7 @@ def draw(
     reference: str,
 ) -> None:
     """Take an amount off a lot without making a treatment."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = store.draw(
             opened,
             lot_id,
@@ -161,8 +151,6 @@ def draw(
             reference=reference,
         )
         left = store.stock(opened, lot_id).left
-    finally:
-        opened.close()
     click.echo(f"{made.amount} {made.reason} off {made.lot}, {left} left")
 
 
@@ -173,12 +161,9 @@ def draw(
 def expiring(desk: Desk, on_text: str | None, days: int) -> None:
     """Every lot with something left that goes out of date soon."""
     on = day_or_today(on_text, desk.zone_name)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.expiring(opened, on, days)
         names = {one.id: one.name for one in products.all_products(opened)}
-    finally:
-        opened.close()
     echo_rows(
         ["lot", "product", "code", "expires", "left", "days"],
         [
@@ -201,12 +186,9 @@ def expiring(desk: Desk, on_text: str | None, days: int) -> None:
 @pass_desk
 def recall(desk: Desk, product_name: str, code: str) -> None:
     """Every draw ever made off one manufacturer code."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         product = products.resolve(opened, product_name)
         found = store.recall(opened, product.id, code)
-    finally:
-        opened.close()
     click.echo(f"{product.name} lot {code}\n")
     echo_rows(
         ["day", "amount", "reason", "for", "by"],

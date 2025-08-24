@@ -52,12 +52,9 @@ def week(
 ) -> None:
     """The whole picture for one reporting week."""
     year, number = clock.read_week(label)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
         found = service.picture(opened, year, number, virus_name, kind=kind, zone_id=zone_id)
-    finally:
-        opened.close()
     echo_pairs(
         [
             ("week", found.label),
@@ -101,8 +98,7 @@ def season(
     zone_name: str | None,
 ) -> None:
     """One line for every week of a season."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
         weeks = service.season(
             opened,
@@ -113,8 +109,6 @@ def season(
             kind=kind,
             zone_id=zone_id,
         )
-    finally:
-        opened.close()
     echo_rows(
         ["week", "abundance", "pools", "positive", "rate", "index", "level"],
         [
@@ -138,11 +132,8 @@ def season(
 @pass_desk
 def first(desk: Desk, year: int, virus_name: str) -> None:
     """The earliest week of a season anything came back positive."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = service.first_positive(opened, year, virus_name)
-    finally:
-        opened.close()
     if found is None:
         click.echo(f"nothing positive for {virus_name} in {year}")
         return
@@ -157,11 +148,8 @@ def first(desk: Desk, year: int, virus_name: str) -> None:
 @pass_desk
 def peak(desk: Desk, year: int, virus_name: str, first_week: int, last: int) -> None:
     """The week of a season with the highest vector index."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = service.peak(opened, year, virus_name, first=first_week, last=last)
-    finally:
-        opened.close()
     if found is None:
         click.echo(f"no vector index for {virus_name} in {year}")
         return

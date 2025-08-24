@@ -48,8 +48,7 @@ def add(
     note: str,
 ) -> None:
     """Put a licence holder on the books."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         made = store.add(
             opened,
             name,
@@ -61,8 +60,6 @@ def add(
             supervisor=supervisor,
             note=note,
         )
-    finally:
-        opened.close()
     click.echo(f"{made.id}  {made.name}  {made.licence}  {made.grade}")
 
 
@@ -72,14 +69,11 @@ def add(
 @pass_desk
 def list_them(desk: Desk, grade: str | None, on_text: str | None) -> None:
     """Everybody on the licence register."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.all_applicators(opened, grade=grade)
         if on_text is not None:
             on = day_or_today(on_text, desk.zone_name)
             found = [one for one in found if one.licensed(on)]
-    finally:
-        opened.close()
     echo_rows(
         ["id", "name", "licence", "grade", "categories", "expires", "under"],
         [
@@ -104,8 +98,7 @@ def list_them(desk: Desk, grade: str | None, on_text: str | None) -> None:
 def show(desk: Desk, who: str, on_text: str | None) -> None:
     """One licence holder, their standing and their courses."""
     on = day_or_today(on_text, desk.zone_name)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.resolve(opened, who)
         where = licensing.standing(opened, found.id, on)
         courses = store.credits_for(
@@ -114,8 +107,6 @@ def show(desk: Desk, who: str, on_text: str | None) -> None:
             since=found.cycle_start(),
             until=found.expires_on,
         )
-    finally:
-        opened.close()
     echo_pairs(
         [
             ("id", found.id),
@@ -151,8 +142,7 @@ def show(desk: Desk, who: str, on_text: str | None) -> None:
 @pass_desk
 def credit(desk: Desk, who: str, course: str, on_text: str, category: str, hours: float) -> None:
     """Record a course somebody sat."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.resolve(opened, who)
         made = store.credit(
             opened,
@@ -162,8 +152,6 @@ def credit(desk: Desk, who: str, course: str, on_text: str, category: str, hours
             Decimal(str(hours)),
             course,
         )
-    finally:
-        opened.close()
     click.echo(f"{found.name}  {made.hours} hours in {made.category}  {made.course}")
 
 
@@ -174,8 +162,7 @@ def credit(desk: Desk, who: str, course: str, on_text: str, category: str, hours
 @pass_desk
 def renew(desk: Desk, who: str, certified_text: str, expires_text: str) -> None:
     """Write a new certification period against a licence."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.resolve(opened, who)
         after = store.renew(
             opened,
@@ -183,8 +170,6 @@ def renew(desk: Desk, who: str, certified_text: str, expires_text: str) -> None:
             clock.day(certified_text),
             clock.day(expires_text),
         )
-    finally:
-        opened.close()
     click.echo(f"{after.name} licensed to {after.expires_on}")
 
 
@@ -194,12 +179,9 @@ def renew(desk: Desk, who: str, certified_text: str, expires_text: str) -> None:
 @pass_desk
 def leave(desk: Desk, who: str, on_text: str | None) -> None:
     """Record that somebody has left the district."""
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = store.resolve(opened, who)
         after = store.leave(opened, found.id, day_or_today(on_text, desk.zone_name))
-    finally:
-        opened.close()
     click.echo(f"{after.name} left {after.left_on}")
 
 
@@ -210,11 +192,8 @@ def leave(desk: Desk, who: str, on_text: str | None) -> None:
 def expiring(desk: Desk, on_text: str | None, days: int) -> None:
     """Every licence that runs out soon, and whether the credits are there."""
     on = day_or_today(on_text, desk.zone_name)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         found = licensing.expiring(opened, on, days)
-    finally:
-        opened.close()
     echo_rows(
         ["id", "name", "grade", "expires", "days", "hours held", "hours needed", "renewable"],
         [
@@ -241,14 +220,11 @@ def expiring(desk: Desk, on_text: str | None, days: int) -> None:
 def for_job(desk: Desk, site_id: str, product_name: str, on_text: str | None) -> None:
     """Everybody who could legally make one application."""
     on = day_or_today(on_text, desk.zone_name)
-    opened = desk.open()
-    try:
+    with desk.book() as opened:
         site = sites.get(opened, site_id)
         product = products.resolve(opened, product_name)
         wanted = licensing.category_for(site, product)
         found = licensing.crew(opened, site_id, product.id, on)
-    finally:
-        opened.close()
     click.echo(f"{site.name}, {product.name}, needs the {wanted} category\n")
     echo_rows(
         ["id", "name", "grade", "categories"],
