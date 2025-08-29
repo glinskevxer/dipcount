@@ -323,6 +323,26 @@ ALTER TABLE treatment ADD COLUMN licence TEXT NOT NULL DEFAULT '';
 CREATE INDEX treatment_by_applicator ON treatment (applicator);
 """
 
+_V11 = """
+CREATE TABLE exclusion (
+    id            TEXT PRIMARY KEY,
+    kind          TEXT NOT NULL,
+    name          TEXT NOT NULL,
+    zone          TEXT NOT NULL REFERENCES zone (id),
+    contact       TEXT NOT NULL DEFAULT '',
+    phone         TEXT NOT NULL DEFAULT '',
+    buffer_ft     INTEGER NOT NULL DEFAULT 0,
+    notice_hours  INTEGER NOT NULL DEFAULT 0,
+    listed_on     TEXT NOT NULL,
+    removed_on    TEXT,
+    note          TEXT NOT NULL DEFAULT '',
+    UNIQUE (kind, name)
+);
+
+CREATE INDEX exclusion_by_zone ON exclusion (zone);
+CREATE INDEX exclusion_by_kind ON exclusion (kind);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
@@ -334,6 +354,7 @@ MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(8, "treatments, and what went on what", _V8),
     Migration(9, "applicators, their licences and their credits", _V9),
     Migration(10, "the licence number in force when a treatment was made", _V10),
+    Migration(11, "the register of places that are not sprayed", _V11),
 )
 
 

@@ -56,6 +56,7 @@ KINDS: Final[dict[str, Kind]] = {
         Kind("equipment", "EQ", SERIAL, width=3),
         Kind("request", "SR", SERIAL),
         Kind("notice", "NT", SERIAL),
+        Kind("exclusion", "EX", SERIAL),
         Kind("dip", "DP", DATED),
         Kind("collection", "CO", DATED),
         Kind("pool", "PL", DATED),
