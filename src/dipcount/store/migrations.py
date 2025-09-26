@@ -343,6 +343,66 @@ CREATE INDEX exclusion_by_zone ON exclusion (zone);
 CREATE INDEX exclusion_by_kind ON exclusion (kind);
 """
 
+_V12 = """
+CREATE TABLE block (
+    id          TEXT PRIMARY KEY,
+    zone        TEXT NOT NULL REFERENCES zone (id),
+    name        TEXT NOT NULL UNIQUE,
+    acres       REAL NOT NULL,
+    road_miles  REAL NOT NULL DEFAULT 0,
+    listed_on   TEXT NOT NULL,
+    retired_on  TEXT,
+    note        TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX block_by_zone ON block (zone);
+
+CREATE TABLE block_exclusion (
+    block       TEXT NOT NULL REFERENCES block (id),
+    exclusion   TEXT NOT NULL REFERENCES exclusion (id),
+    PRIMARY KEY (block, exclusion)
+);
+
+CREATE INDEX block_exclusion_by_exclusion ON block_exclusion (exclusion);
+
+CREATE TABLE notice (
+    id          TEXT PRIMARY KEY,
+    exclusion   TEXT NOT NULL REFERENCES exclusion (id),
+    block       TEXT NOT NULL REFERENCES block (id),
+    given_at    TEXT NOT NULL,
+    spray_from  TEXT NOT NULL,
+    spray_to    TEXT NOT NULL,
+    how         TEXT NOT NULL,
+    given_by    TEXT NOT NULL,
+    note        TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX notice_by_exclusion ON notice (exclusion);
+CREATE INDEX notice_by_block ON notice (block);
+
+CREATE TABLE run (
+    id           TEXT PRIMARY KEY,
+    block        TEXT NOT NULL REFERENCES block (id),
+    product      TEXT NOT NULL REFERENCES product (id),
+    lot          TEXT NOT NULL REFERENCES lot (id),
+    applicator   TEXT NOT NULL,
+    licence      TEXT NOT NULL DEFAULT '',
+    started_at   TEXT NOT NULL,
+    finished_at  TEXT NOT NULL,
+    amount       TEXT NOT NULL,
+    acres        REAL NOT NULL,
+    equipment    TEXT NOT NULL DEFAULT '',
+    temperature  REAL,
+    wind_mph     REAL,
+    wind_from    TEXT NOT NULL DEFAULT '',
+    note         TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX run_by_block ON run (block);
+CREATE INDEX run_by_started ON run (started_at);
+CREATE INDEX run_by_lot ON run (lot);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
@@ -355,6 +415,7 @@ MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(9, "applicators, their licences and their credits", _V9),
     Migration(10, "the licence number in force when a treatment was made", _V10),
     Migration(11, "the register of places that are not sprayed", _V11),
+    Migration(12, "spray blocks, the notices given and the runs made", _V12),
 )
 
 
