@@ -251,6 +251,59 @@ CLAUSES: Final[tuple[Clause, ...]] = (
         " than typed in beside it.",
     ),
     Clause(
+        "spray.wind",
+        "the wind has to be inside a band, not under a ceiling",
+        "Over the top of the band the fog drifts off the block. Under the"
+        " bottom of it there is nothing to carry the droplets and an"
+        " inversion holds them where they were released. Still air is a"
+        " refusal, not a perfect night.",
+    ),
+    Clause(
+        "spray.temperature",
+        "cold air does not carry a fog",
+        "Below the floor the droplets fall out of the air and the mosquitoes"
+        " are not flying to meet them anyway.",
+    ),
+    Clause(
+        "spray.hours",
+        "the truck runs at night",
+        "Ground ultra low volume goes out when the target species are flying"
+        " and the pollinators are not, which is after dusk and before the"
+        " early hours.",
+    ),
+    Clause(
+        "spray.notice",
+        "everybody on the register inside the block is told first",
+        "Notice is given for a place and a block together, covering a window"
+        " the run falls inside, far enough ahead for the kind of entry. A"
+        " notice for the neighbouring block is not notice.",
+    ),
+    Clause(
+        "spray.absolute",
+        "some entries take the block off the run",
+        "An entry that no amount of notice gets round is not a delay. The"
+        " block does not run, tonight or any night, until the entry comes"
+        " off the register.",
+    ),
+    Clause(
+        "spray.block",
+        "a block comes off the run list once",
+        "A retired block is not retired again, and it cannot be retired"
+        " before the day it was listed.",
+    ),
+    Clause(
+        "spray.register",
+        "a register entry comes off once",
+        "An entry is removed from the register once, and not before the day it went on.",
+    ),
+    Clause(
+        "spray.acres",
+        "a run covers no more than the block holds",
+        "Part of a block may be run. More than the block is a measuring"
+        " mistake and the rate that comes out of it is wrong in the"
+        " comfortable direction.",
+    ),
+    Clause(
         "licence.date",
         "an expired licence makes no applications",
         "The licence has a date and after it the holder applies nothing, of any kind, at any rate.",
@@ -357,6 +410,21 @@ LATE_URGENT: Final = Decimal("0.75")
 
 RAFT_INTERVAL: Final = 4
 """Days to the next visit when egg rafts were the only thing found."""
+
+WIND_LOW: Final = Decimal("1")
+"""Miles an hour below which there is nothing to carry the fog."""
+
+WIND_HIGH: Final = Decimal("10")
+"""Miles an hour above which the fog leaves the block."""
+
+TEMP_FLOOR: Final = Decimal("50")
+"""Fahrenheit below which a ground fog is not worth making."""
+
+NIGHT_FROM: Final = 20
+"""The earliest hour, local, a run may start."""
+
+NIGHT_TO: Final = 2
+"""The hour, local, by which a run has finished."""
 
 FLOOD_INCHES: Final = Decimal("0.5")
 """Rain over one day that puts the floodwater sites back on the round."""
