@@ -16,6 +16,7 @@ from dipcount.cli import lot as lot_commands
 from dipcount.cli import pool as pool_commands
 from dipcount.cli import product as product_commands
 from dipcount.cli import site as site_commands
+from dipcount.cli import spray as spray_commands
 from dipcount.cli import trap as trap_commands
 from dipcount.cli import treat as treat_commands
 from dipcount.cli import virus as virus_commands
@@ -67,6 +68,7 @@ cli.add_command(treat_commands.treat)
 cli.add_command(applicator_commands.crew)
 cli.add_command(block_commands.block)
 cli.add_command(block_commands.register)
+cli.add_command(spray_commands.spray)
 cli.add_command(weather_commands.wx)
 
 
