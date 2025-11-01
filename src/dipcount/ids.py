@@ -63,6 +63,7 @@ KINDS: Final[dict[str, Kind]] = {
         Kind("treatment", "TX", DATED),
         Kind("run", "RN", DATED),
         Kind("bioassay", "BA", DATED),
+        Kind("calibration", "CA", DATED),
         Kind("inspection", "IN", DATED),
         Kind("observation", "WX", DATED),
     )

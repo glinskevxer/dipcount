@@ -403,6 +403,38 @@ CREATE INDEX run_by_started ON run (started_at);
 CREATE INDEX run_by_lot ON run (lot);
 """
 
+_V13 = """
+CREATE TABLE equipment (
+    id          TEXT PRIMARY KEY,
+    kind        TEXT NOT NULL,
+    maker       TEXT NOT NULL,
+    model       TEXT NOT NULL,
+    serial      TEXT NOT NULL UNIQUE,
+    nominal     TEXT NOT NULL DEFAULT '',
+    swath_ft    REAL NOT NULL DEFAULT 0,
+    added_on    TEXT NOT NULL,
+    retired_on  TEXT,
+    note        TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX equipment_by_kind ON equipment (kind);
+
+CREATE TABLE calibration (
+    id          TEXT PRIMARY KEY,
+    equipment   TEXT NOT NULL REFERENCES equipment (id),
+    on_day      TEXT NOT NULL,
+    tested_by   TEXT NOT NULL,
+    flow        TEXT NOT NULL,
+    droplet     REAL,
+    swath_ft    REAL NOT NULL DEFAULT 0,
+    speed_mph   REAL NOT NULL DEFAULT 0,
+    note        TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX calibration_by_equipment ON calibration (equipment);
+CREATE INDEX calibration_by_day ON calibration (on_day);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
@@ -416,6 +448,7 @@ MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(10, "the licence number in force when a treatment was made", _V10),
     Migration(11, "the register of places that are not sprayed", _V11),
     Migration(12, "spray blocks, the notices given and the runs made", _V12),
+    Migration(13, "machines and the calibrations run on them", _V13),
 )
 
 
