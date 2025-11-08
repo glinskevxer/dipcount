@@ -304,6 +304,31 @@ CLAUSES: Final[tuple[Clause, ...]] = (
         " comfortable direction.",
     ),
     Clause(
+        "equipment.calibration",
+        "a machine works to its last calibration",
+        "A calibration stands for thirty days. Past that the machine has not"
+        " been shown to do anything, and what went on the ground is a guess"
+        " written down as a figure.",
+    ),
+    Clause(
+        "equipment.flow",
+        "the flow has to be near what the machine is rated at",
+        "Ten percent either way. Outside that the nozzle is worn or blocked,"
+        " and the rate the paperwork claims is not the rate applied.",
+    ),
+    Clause(
+        "equipment.droplet",
+        "an ultra low volume machine has to make small droplets",
+        "Over the ceiling the cloud falls out of the air. The mosquitoes never"
+        " meet it and what has happened is a pesticide application to"
+        " somebody's lawn.",
+    ),
+    Clause(
+        "equipment.retired",
+        "a machine out of service applies nothing",
+        "A retired machine takes no calibration and makes no run.",
+    ),
+    Clause(
         "licence.date",
         "an expired licence makes no applications",
         "The licence has a date and after it the holder applies nothing, of any kind, at any rate.",
