@@ -12,6 +12,7 @@ from dipcount.cli import applicator as applicator_commands
 from dipcount.cli import block as block_commands
 from dipcount.cli import book as book_commands
 from dipcount.cli import dip as dip_commands
+from dipcount.cli import equipment as equipment_commands
 from dipcount.cli import lot as lot_commands
 from dipcount.cli import pool as pool_commands
 from dipcount.cli import product as product_commands
@@ -69,6 +70,7 @@ cli.add_command(applicator_commands.crew)
 cli.add_command(block_commands.block)
 cli.add_command(block_commands.register)
 cli.add_command(spray_commands.spray)
+cli.add_command(equipment_commands.shop)
 cli.add_command(weather_commands.wx)
 
 
