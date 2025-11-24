@@ -435,6 +435,30 @@ CREATE INDEX calibration_by_equipment ON calibration (equipment);
 CREATE INDEX calibration_by_day ON calibration (on_day);
 """
 
+_V14 = """
+CREATE TABLE request (
+    id           TEXT PRIMARY KEY,
+    kind         TEXT NOT NULL,
+    zone         TEXT NOT NULL REFERENCES zone (id),
+    taken_at     TEXT NOT NULL,
+    caller       TEXT NOT NULL DEFAULT '',
+    phone        TEXT NOT NULL DEFAULT '',
+    address      TEXT NOT NULL,
+    detail       TEXT NOT NULL DEFAULT '',
+    assigned_to  TEXT,
+    visited_at   TEXT,
+    site         TEXT REFERENCES site (id),
+    closed_at    TEXT,
+    outcome      TEXT NOT NULL DEFAULT '',
+    note         TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX request_by_zone ON request (zone);
+CREATE INDEX request_by_kind ON request (kind);
+CREATE INDEX request_by_taken ON request (taken_at);
+CREATE INDEX request_by_site ON request (site);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
@@ -449,6 +473,7 @@ MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(11, "the register of places that are not sprayed", _V11),
     Migration(12, "spray blocks, the notices given and the runs made", _V12),
     Migration(13, "machines and the calibrations run on them", _V13),
+    Migration(14, "service requests and how they were answered", _V14),
 )
 
 
