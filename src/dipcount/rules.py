@@ -329,6 +329,30 @@ CLAUSES: Final[tuple[Clause, ...]] = (
         "A retired machine takes no calibration and makes no run.",
     ),
     Clause(
+        "request.clock",
+        "the clock starts when the phone is put down",
+        "The answer time runs from when the call was taken, not from when"
+        " somebody got round to reading it, and a call answered late stays"
+        " late however long afterwards it is closed.",
+    ),
+    Clause(
+        "request.escalation",
+        "a busy virus week shortens two of the clocks",
+        "When the response level is high or above, dead bird and spray"
+        " concern calls are answered in half the usual time. The other kinds"
+        " do not move, because finding water does not get faster.",
+    ),
+    Clause(
+        "request.visited",
+        "a call is visited once",
+        "The visit is the answer. A second visit is a second call.",
+    ),
+    Clause(
+        "request.closed",
+        "a closed call takes no more work",
+        "Nothing is assigned to it, visited on it or closed again.",
+    ),
+    Clause(
         "licence.date",
         "an expired licence makes no applications",
         "The licence has a date and after it the holder applies nothing, of any kind, at any rate.",
@@ -471,6 +495,9 @@ _ADULT: Final[dict[str, str]] = {
     "bg": "5",
     "resting": "5",
 }
+
+ESCALATED_LEVELS: Final[tuple[str, ...]] = ("high", "emergency")
+"""Response levels that shorten the fast call clocks."""
 
 ELEVATED: Final = Decimal("2")
 """How many times the baseline a week has to reach to be called elevated."""
