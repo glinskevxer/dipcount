@@ -459,6 +459,37 @@ CREATE INDEX request_by_taken ON request (taken_at);
 CREATE INDEX request_by_site ON request (site);
 """
 
+_V15 = """
+CREATE TABLE bioassay (
+    id           TEXT PRIMARY KEY,
+    active       TEXT NOT NULL,
+    species      TEXT NOT NULL,
+    source       TEXT NOT NULL,
+    zone         TEXT REFERENCES zone (id),
+    on_day       TEXT NOT NULL,
+    tested_by    TEXT NOT NULL,
+    dose_ug      REAL NOT NULL,
+    diagnostic   INTEGER NOT NULL,
+    note         TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX bioassay_by_active ON bioassay (active);
+CREATE INDEX bioassay_by_species ON bioassay (species);
+CREATE INDEX bioassay_by_zone ON bioassay (zone);
+
+CREATE TABLE bottle (
+    seq        INTEGER PRIMARY KEY AUTOINCREMENT,
+    bioassay   TEXT NOT NULL REFERENCES bioassay (id),
+    label      TEXT NOT NULL,
+    minute     INTEGER NOT NULL,
+    knocked    INTEGER NOT NULL,
+    total      INTEGER NOT NULL,
+    UNIQUE (bioassay, label, minute)
+);
+
+CREATE INDEX bottle_by_bioassay ON bottle (bioassay);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
@@ -474,6 +505,7 @@ MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(12, "spray blocks, the notices given and the runs made", _V12),
     Migration(13, "machines and the calibrations run on them", _V13),
     Migration(14, "service requests and how they were answered", _V14),
+    Migration(15, "bottle bioassays and the readings off them", _V15),
 )
 
 
