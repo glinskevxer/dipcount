@@ -353,6 +353,27 @@ CLAUSES: Final[tuple[Clause, ...]] = (
         "Nothing is assigned to it, visited on it or closed again.",
     ),
     Clause(
+        "resistance.species",
+        "a finding is about the species it was run on",
+        "Resistance in a catch basin Culex says nothing about a floodplain"
+        " producing Aedes. A finding only bears on a site whose habitat"
+        " produces the species the bottles held.",
+    ),
+    Clause(
+        "resistance.stale",
+        "a finding has a shelf life",
+        "Two seasons on, a bottle assay is history rather than evidence. It"
+        " is still reported, and it is reported as old.",
+    ),
+    Clause(
+        "resistance.rotation",
+        "modes of action are rotated, not products",
+        "Two products with different names and the same mode of action are"
+        " one product as far as resistance is concerned. Three applications"
+        " running in one mode at one site is a rotation that is not"
+        " happening.",
+    ),
+    Clause(
         "licence.date",
         "an expired licence makes no applications",
         "The licence has a date and after it the holder applies nothing, of any kind, at any rate.",
@@ -542,6 +563,45 @@ def response_level(vector_index: Decimal) -> str:
 def ladder() -> list[tuple[str, Decimal]]:
     """The response ladder, lowest first."""
     return [(name, Decimal(floor)) for name, floor in _LADDER]
+
+
+_MODES: Final[dict[str, str]] = {
+    "Bacillus thuringiensis subspecies israelensis": "bacterial toxin",
+    "Bacillus sphaericus": "bacterial toxin",
+    "S-methoprene": "growth regulator",
+    "spinosad": "spinosyn",
+    "mineral oil": "surface film",
+    "isostearyl alcohol ethoxylate": "surface film",
+    "permethrin": "pyrethroid",
+    "sumithrin": "pyrethroid",
+    "deltamethrin": "pyrethroid",
+    "malathion": "organophosphate",
+    "naled": "organophosphate",
+}
+
+STALE_DAYS: Final = 730
+"""How long a bottle assay stands as evidence rather than as history."""
+
+ROTATION_RUN: Final = 3
+"""Applications in one mode of action at one site before the rotation fails."""
+
+
+def mode_of(active: str) -> str:
+    """Which mode of action an active ingredient belongs to."""
+    try:
+        return _MODES[active]
+    except KeyError as exc:
+        raise NotFound("mode of action", active) from exc
+
+
+def modes() -> list[str]:
+    """Every mode of action the district works with."""
+    return sorted(set(_MODES.values()))
+
+
+def actives_in(mode: str) -> list[str]:
+    """Every active ingredient in one mode of action."""
+    return sorted(name for name, group in _MODES.items() if group == mode)
 
 
 def development(guild: str) -> Decimal:
