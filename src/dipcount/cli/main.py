@@ -9,6 +9,7 @@ import click
 
 from dipcount import __version__, clock
 from dipcount.cli import applicator as applicator_commands
+from dipcount.cli import bioassay as bioassay_commands
 from dipcount.cli import block as block_commands
 from dipcount.cli import book as book_commands
 from dipcount.cli import dip as dip_commands
@@ -73,6 +74,7 @@ cli.add_command(block_commands.register)
 cli.add_command(spray_commands.spray)
 cli.add_command(equipment_commands.shop)
 cli.add_command(request_commands.call)
+cli.add_command(bioassay_commands.assay)
 cli.add_command(weather_commands.wx)
 
 
