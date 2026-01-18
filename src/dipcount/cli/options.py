@@ -13,6 +13,7 @@ import click
 
 from dipcount import clock
 from dipcount.errors import UsageError
+from dipcount.report import sheet
 from dipcount.store import Book, require_ready
 from dipcount.units import Quantity
 
@@ -113,26 +114,20 @@ def moment_or_now(text: str | None, zone: str = clock.DEFAULT_ZONE) -> dt.dateti
     return clock.moment(text, zone)
 
 
-def echo_pairs(pairs: list[tuple[str, str]]) -> None:
+def echo_pairs(entries: list[tuple[str, str]]) -> None:
     """Print a record as aligned label and value lines."""
-    if not pairs:
-        return
-    width = max(len(label) for label, _ in pairs)
-    for label, value in pairs:
-        click.echo(f"{label.rjust(width)}  {value}")
+    if entries:
+        click.echo(sheet.pairs(entries))
 
 
-def echo_rows(headings: list[str], rows: list[list[str]]) -> None:
+def echo_rows(headings: list[str], rows: list[list[str]], *, title: str = "") -> None:
     """Print a table with the columns lined up under their headings."""
-    widths = [len(head) for head in headings]
-    for row in rows:
-        for index, cell in enumerate(row):
-            widths[index] = max(widths[index], len(cell))
-    click.echo("  ".join(head.ljust(widths[index]) for index, head in enumerate(headings)))
-    click.echo("  ".join("-" * width for width in widths))
-    for row in rows:
-        click.echo("  ".join(cell.ljust(widths[index]) for index, cell in enumerate(row)))
-    click.echo(f"\n{len(rows)} row{'' if len(rows) == 1 else 's'}")
+    click.echo(sheet.table(headings, rows, title=title).render())
+
+
+def echo_sheet(made: sheet.Sheet) -> None:
+    """Print a sheet a report has already built."""
+    click.echo(made.render())
 
 
 def one_of(name: str, value: str, allowed: list[str]) -> str:
