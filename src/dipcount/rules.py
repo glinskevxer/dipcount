@@ -374,6 +374,20 @@ CLAUSES: Final[tuple[Clause, ...]] = (
         " happening.",
     ),
     Clause(
+        "report.retention",
+        "records are kept for two years after the season they belong to",
+        "Two years is the floor, not the target. A record destroyed at two"
+        " years and one day is a record that was not there when it was"
+        " wanted.",
+    ),
+    Clause(
+        "report.completeness",
+        "an application with a gap in it is not reportable",
+        "The state wants the day, the place, the product, the registration"
+        " number, the amount, the area and who made it. A row missing any of"
+        " those is a row the district cannot file.",
+    ),
+    Clause(
         "licence.date",
         "an expired licence makes no applications",
         "The licence has a date and after it the holder applies nothing, of any kind, at any rate.",
@@ -578,6 +592,9 @@ _MODES: Final[dict[str, str]] = {
     "malathion": "organophosphate",
     "naled": "organophosphate",
 }
+
+RETENTION_YEARS: Final = 2
+"""How long a use record has to be kept after the season it belongs to."""
 
 STALE_DAYS: Final = 730
 """How long a bottle assay stands as evidence rather than as history."""
