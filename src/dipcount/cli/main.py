@@ -17,6 +17,7 @@ from dipcount.cli import equipment as equipment_commands
 from dipcount.cli import lot as lot_commands
 from dipcount.cli import pool as pool_commands
 from dipcount.cli import product as product_commands
+from dipcount.cli import report as report_commands
 from dipcount.cli import request as request_commands
 from dipcount.cli import site as site_commands
 from dipcount.cli import spray as spray_commands
@@ -75,6 +76,7 @@ cli.add_command(spray_commands.spray)
 cli.add_command(equipment_commands.shop)
 cli.add_command(request_commands.call)
 cli.add_command(bioassay_commands.assay)
+cli.add_command(report_commands.report)
 cli.add_command(weather_commands.wx)
 
 
