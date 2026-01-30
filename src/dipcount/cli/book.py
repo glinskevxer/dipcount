@@ -6,6 +6,7 @@ from contextlib import closing
 
 import click
 
+from dipcount import glossary
 from dipcount.cli.options import Desk, echo_pairs, echo_rows, pass_desk
 from dipcount.store import Book, latest, upgrade
 from dipcount.store.migrate import pending
@@ -37,6 +38,20 @@ def counts(desk: Desk) -> None:
     with desk.book() as opened:
         rows = [[name, str(opened.count(name))] for name in opened.tables()]
     echo_rows(["table", "rows"], rows)
+
+
+@book.command("terms")
+@click.option("--word", default=None, help="One term instead of the whole glossary.")
+def terms(word: str | None) -> None:
+    """What the district means by the words it uses."""
+    if word is not None:
+        found = glossary.term(word)
+        echo_pairs([("term", found.word), ("owner", found.owner), ("meaning", found.meaning)])
+        return
+    echo_rows(
+        ["term", "owner", "meaning"],
+        [[one.word, one.owner, one.meaning] for one in glossary.TERMS],
+    )
 
 
 @book.command("check")

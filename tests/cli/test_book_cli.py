@@ -67,3 +67,19 @@ def test_main_returns_our_status_on_a_refusal(tmp_path: Path) -> None:
 def test_main_returns_the_click_status_on_a_bad_command(tmp_path: Path) -> None:
     path = tmp_path / "district.sqlite3"
     assert main(["--book", str(path), "nonsense"]) == 2
+
+
+def test_the_glossary_prints(started: Run) -> None:
+    result = started("book", "terms")
+    assert "trap night" in result.output
+    assert "reporting week" in result.output
+
+
+def test_one_term_can_be_asked_for(started: Run) -> None:
+    result = started("book", "terms", "--word", "vector index")
+    assert "Abundance times infection rate" in result.output
+
+
+def test_an_unknown_term_is_refused(started: Run) -> None:
+    result = started("book", "terms", "--word", "swarm", expect=1)
+    assert result.exit_code != 0
