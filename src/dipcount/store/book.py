@@ -194,6 +194,7 @@ class Book:
 
     @version.setter
     def version(self, number: int) -> None:
+        """Write the schema version the book is migrated to."""
         self.run(f"PRAGMA user_version = {int(number)}")
 
     def integrity(self) -> str:

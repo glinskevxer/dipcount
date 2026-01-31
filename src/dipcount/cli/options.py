@@ -89,6 +89,7 @@ def today_option(help_text: str = "The day this happened.") -> Callable[[F], F]:
     """A ``--on`` option defaulting to today in the district's zone."""
 
     def decorate(command: F) -> F:
+        """Put the option on one command."""
         return click.option(
             "--on",
             "on_text",

@@ -165,6 +165,7 @@ class Request:
         """Read a call off a database row."""
 
         def moment(name: str) -> dt.datetime | None:
+            """One of the optional moments, or nothing when it is empty."""
             value = row[name]
             return None if value is None else dt.datetime.fromisoformat(str(value))
 
