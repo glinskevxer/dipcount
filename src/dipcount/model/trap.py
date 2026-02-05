@@ -22,7 +22,7 @@ from typing import Final
 
 from dipcount import clock, ids, species
 from dipcount.errors import UsageError
-from dipcount.store.book import Row
+from dipcount.rows import Row
 
 FEMALE: Final = "F"
 MALE: Final = "M"

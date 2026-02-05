@@ -21,8 +21,8 @@ from typing import Final
 
 from dipcount import ids, species
 from dipcount.errors import UsageError
+from dipcount.rows import Row
 from dipcount.species import Species
-from dipcount.store.book import Row
 
 POSITIVE: Final = "positive"
 NEGATIVE: Final = "negative"

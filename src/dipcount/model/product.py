@@ -27,7 +27,7 @@ from typing import Final
 from dipcount import habitat as hb
 from dipcount import ids
 from dipcount.errors import UsageError
-from dipcount.store.book import Row
+from dipcount.rows import Row
 from dipcount.units import Quantity, Rate
 
 LARVICIDE: Final = "larvicide"

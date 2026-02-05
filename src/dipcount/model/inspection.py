@@ -20,7 +20,7 @@ from decimal import Decimal
 
 from dipcount import clock, ids
 from dipcount.errors import UsageError
-from dipcount.store.book import Row
+from dipcount.rows import Row
 
 STAGES = ("R", "1", "2", "3", "4", "P")
 """Egg raft, the four larval instars, and pupa."""

@@ -27,9 +27,10 @@ from pathlib import Path
 from types import TracebackType
 from typing import Any, Self
 
+from dipcount import rows
 from dipcount.errors import BookError
 
-Row = sqlite3.Row
+Row = rows.Row
 Params = Sequence[Any] | dict[str, Any]
 
 MEMORY = ":memory:"

@@ -22,7 +22,7 @@ from decimal import Decimal
 
 from dipcount import clock, ids
 from dipcount.errors import UsageError
-from dipcount.store.book import Row
+from dipcount.rows import Row
 from dipcount.units import Quantity, Rate
 
 
