@@ -97,19 +97,6 @@ def _shape(
     return sizes, hits, held
 
 
-def rate_for(
-    book: Book,
-    year: int,
-    week: int,
-    virus: str,
-    *,
-    zone_id: str | None = None,
-) -> tuple[estimate.Estimate, int]:
-    """The infection rate for a week, and how many pools were held back."""
-    sizes, hits, held = _shape(book, year, week, virus, zone_id)
-    return estimate.estimate(sizes, hits), held
-
-
 def picture(
     book: Book,
     year: int,

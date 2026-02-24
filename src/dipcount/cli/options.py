@@ -12,7 +12,6 @@ from typing import Any, TypeVar
 import click
 
 from dipcount import clock
-from dipcount.errors import UsageError
 from dipcount.report import sheet
 from dipcount.store import Book, require_ready
 from dipcount.units import Quantity
@@ -70,35 +69,9 @@ class Desk:
 pass_desk = click.make_pass_decorator(Desk)
 
 
-def read_day(text: str) -> dt.date:
-    """A ``YYYY-MM-DD`` argument."""
-    return clock.day(text)
-
-
-def read_moment(text: str, zone: str = clock.DEFAULT_ZONE) -> dt.datetime:
-    """A ``YYYY-MM-DD HH:MM`` argument in the district's zone."""
-    return clock.moment(text, zone)
-
-
 def read_quantity(text: str) -> Quantity:
     """An amount and a unit, such as ``6.5 acre``."""
     return Quantity.parse(text)
-
-
-def today_option(help_text: str = "The day this happened.") -> Callable[[F], F]:
-    """A ``--on`` option defaulting to today in the district's zone."""
-
-    def decorate(command: F) -> F:
-        """Put the option on one command."""
-        return click.option(
-            "--on",
-            "on_text",
-            default=None,
-            metavar="YYYY-MM-DD",
-            help=help_text,
-        )(command)
-
-    return decorate
 
 
 def day_or_today(text: str | None, zone: str = clock.DEFAULT_ZONE) -> dt.date:
@@ -129,10 +102,3 @@ def echo_rows(headings: list[str], rows: list[list[str]], *, title: str = "") ->
 def echo_sheet(made: sheet.Sheet) -> None:
     """Print a sheet a report has already built."""
     click.echo(made.render())
-
-
-def one_of(name: str, value: str, allowed: list[str]) -> str:
-    """Refuse a value that is not in a fixed list, naming what is."""
-    if value not in allowed:
-        raise UsageError(f"{value} is not a {name}: try {', '.join(allowed)}")
-    return value

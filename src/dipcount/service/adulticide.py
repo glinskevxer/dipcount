@@ -29,7 +29,7 @@ from dipcount.model.block import Block, Notice, Run
 from dipcount.model.exclusion import Exclusion
 from dipcount.model.product import ADULTICIDE
 from dipcount.rules import Refusal
-from dipcount.store import applicators, audit, blocks, exclusions, inventory, products, runs
+from dipcount.store import applicators, audit, blocks, inventory, products, runs
 from dipcount.store.book import Book
 from dipcount.units import Quantity
 
@@ -296,12 +296,3 @@ def notice_deadline(book: Book, block_id: str, at: dt.datetime) -> dt.datetime |
 def register_in(book: Book, block_id: str, on: dt.date) -> list[Exclusion]:
     """Every register entry inside a block on a day."""
     return blocks.entries_in(book, blocks.resolve(book, block_id).id, on)
-
-
-def unregistered_blocks(book: Book, on: dt.date) -> list[Block]:
-    """Every open block with nothing on the register inside it."""
-    return [
-        one
-        for one in blocks.open_on(book, on)
-        if not blocks.entries_in(book, one.id, on) and not exclusions.on_register(book, on)
-    ]
