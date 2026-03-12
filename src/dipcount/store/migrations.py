@@ -490,6 +490,16 @@ CREATE TABLE bottle (
 CREATE INDEX bottle_by_bioassay ON bottle (bioassay);
 """
 
+_V16 = """
+-- Sqlite indexes the parent side of a foreign key and not the child side, so
+-- each of these was a table scan waiting for a busy book. Found by
+-- check_indexes reading the built schema back rather than reading the
+-- migration text, which is why it took until the sixteenth step.
+CREATE INDEX applicator_by_supervisor ON applicator (supervisor);
+CREATE INDEX run_by_product ON run (product);
+CREATE INDEX treatment_by_inspection ON treatment (inspection);
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
@@ -506,6 +516,7 @@ MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(13, "machines and the calibrations run on them", _V13),
     Migration(14, "service requests and how they were answered", _V14),
     Migration(15, "bottle bioassays and the readings off them", _V15),
+    Migration(16, "the three foreign keys nothing was indexing", _V16),
 )
 
 
