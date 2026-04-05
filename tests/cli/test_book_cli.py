@@ -49,7 +49,7 @@ def test_about_names_the_version(runner: CliRunner) -> None:
     assert __version__ in result.output
 
 
-def test_the_version_flag(runner: CliRunner) -> None:
+def test_the_version_flag_prints_the_version(runner: CliRunner) -> None:
     result = runner.invoke(cli, ["--version"])
     assert __version__ in result.output
 
@@ -69,7 +69,7 @@ def test_main_returns_the_click_status_on_a_bad_command(tmp_path: Path) -> None:
     assert main(["--book", str(path), "nonsense"]) == 2
 
 
-def test_the_glossary_prints(started: Run) -> None:
+def test_the_glossary_prints_every_term(started: Run) -> None:
     result = started("book", "terms")
     assert "trap night" in result.output
     assert "reporting week" in result.output

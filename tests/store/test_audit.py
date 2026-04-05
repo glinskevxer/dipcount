@@ -24,7 +24,7 @@ def test_a_line_comes_back_with_a_sequence(district: Book) -> None:
     assert entry.detail == "14 basins"
 
 
-def test_sequences_run_upwards(district: Book) -> None:
+def test_the_sequence_numbers_run_upwards(district: Book) -> None:
     first = trail.record(district, "R. Vandeburg", "listed", "SI-0001")
     second = trail.record(district, "R. Vandeburg", "listed", "SI-0002")
     assert second.seq > first.seq

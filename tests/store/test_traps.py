@@ -122,7 +122,7 @@ def test_a_collection_off_a_retired_trap_is_refused(district: Book) -> None:
         a_night(district)
 
 
-def test_a_missing_collection(district: Book) -> None:
+def test_a_collection_that_is_not_there(district: Book) -> None:
     with pytest.raises(NotFound):
         store.get_collection(district, "CO-250604-01")
 

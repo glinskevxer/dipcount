@@ -148,6 +148,6 @@ def test_the_applicators_are_listed(district: Book) -> None:
     assert treatments.applicators(district) == ["K. Brennaman"]
 
 
-def test_a_missing_treatment(district: Book) -> None:
+def test_a_treatment_that_is_not_there(district: Book) -> None:
     with pytest.raises(NotFound):
         treatments.get(district, "TX-250604-09")

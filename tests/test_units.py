@@ -65,7 +65,7 @@ def test_conversion_within_a_dimension() -> None:
     assert quantity("1 acre").to("ft2").rounded(0).amount == Decimal("43560")
 
 
-def test_conversion_round_trips() -> None:
+def test_a_conversion_round_trips_to_itself() -> None:
     q = quantity("6.5 acre")
     assert q.to("ha").to("acre").rounded(6) == q.rounded(6)
 
@@ -86,7 +86,7 @@ def test_adding_across_dimensions_is_refused() -> None:
         _ = quantity("4 fl oz") + quantity("2 acre")
 
 
-def test_scaling_and_dividing() -> None:
+def test_a_quantity_scales_and_divides() -> None:
     assert (quantity("2 fl oz") * 3).amount == Decimal("6")
     assert (quantity("9 lb") / 3).amount == Decimal("3")
     with pytest.raises(UsageError):

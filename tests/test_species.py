@@ -12,12 +12,12 @@ def test_every_code_is_four_upper_case_letters() -> None:
         assert one.code.isupper()
 
 
-def test_codes_are_unique() -> None:
+def test_no_two_species_share_a_code() -> None:
     codes = [one.code for one in sp.known()]
     assert len(set(codes)) == len(codes)
 
 
-def test_binomials_are_unique() -> None:
+def test_no_two_species_share_a_binomial() -> None:
     names = [one.binomial for one in sp.known()]
     assert len(set(names)) == len(names)
 

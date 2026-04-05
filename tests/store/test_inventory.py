@@ -61,7 +61,7 @@ def test_a_draw_comes_off_the_shelf(district: Book) -> None:
     assert holding.draws == 1
 
 
-def test_draws_add_up(district: Book) -> None:
+def test_the_draws_off_a_lot_add_up(district: Book) -> None:
     for _ in range(4):
         store.draw(district, "LT-0001", quantity("30 lb"), AT, "K. Brennaman")
     assert store.stock(district, "LT-0001").left == quantity("280 lb")
@@ -156,7 +156,7 @@ def test_a_recall_on_a_code_that_is_not_there(district: Book) -> None:
         store.recall(district, "PD-0001", "nothing")
 
 
-def test_a_missing_lot(district: Book) -> None:
+def test_a_lot_that_is_not_there(district: Book) -> None:
     with pytest.raises(NotFound):
         store.get(district, "LT-0099")
     with pytest.raises(NotFound):

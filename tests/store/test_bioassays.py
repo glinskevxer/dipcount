@@ -163,6 +163,6 @@ def test_an_assay_without_a_zone_is_allowed(district: Book) -> None:
     assert made.zone is None
 
 
-def test_a_missing_assay(district: Book) -> None:
+def test_an_assay_that_is_not_there(district: Book) -> None:
     with pytest.raises(NotFound):
         store.get(district, "BA-250812-09")

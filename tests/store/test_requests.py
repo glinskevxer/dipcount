@@ -146,6 +146,6 @@ def test_a_window_and_a_week_gather_the_calls(district: Book) -> None:
     assert len(requests.in_week(district, 2025, 28)) == 1
 
 
-def test_a_missing_call(district: Book) -> None:
+def test_a_call_that_is_not_there(district: Book) -> None:
     with pytest.raises(NotFound):
         requests.get(district, "SR-0099")

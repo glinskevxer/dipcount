@@ -196,6 +196,6 @@ def test_the_actives_on_the_shelf_are_listed(district: Book) -> None:
     ]
 
 
-def test_a_missing_product(district: Book) -> None:
+def test_a_product_that_is_not_there(district: Book) -> None:
     with pytest.raises(NotFound):
         store.get(district, "PD-0099")

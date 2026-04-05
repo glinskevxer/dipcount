@@ -55,7 +55,7 @@ def test_a_flat_assay_reads_susceptible(lab: Run) -> None:
     assert "susceptible" in result.output
 
 
-def test_survivors_read_resistant(lab: Run) -> None:
+def test_survivors_at_the_diagnostic_time_read_resistant(lab: Run) -> None:
     result = lab(
         "assay",
         "run",

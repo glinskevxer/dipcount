@@ -69,7 +69,7 @@ def test_retiring_before_listing_is_refused() -> None:
         a_site(retired_on=LISTED - dt.timedelta(days=1))
 
 
-def test_coordinates_are_checked() -> None:
+def test_coordinates_outside_the_globe_are_refused() -> None:
     with pytest.raises(UsageError):
         a_site(latitude=91.0)
     with pytest.raises(UsageError):

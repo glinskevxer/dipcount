@@ -136,6 +136,6 @@ def test_a_run_keeps_the_weather_it_was_made_in(district: Book) -> None:
     assert made.wind_from == "SW"
 
 
-def test_a_missing_run(district: Book) -> None:
+def test_a_run_that_is_not_there(district: Book) -> None:
     with pytest.raises(NotFound):
         runs.get(district, "RN-250710-09")

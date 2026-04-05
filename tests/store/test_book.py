@@ -44,7 +44,7 @@ def test_a_grouped_write_that_finishes_lands(book: Book) -> None:
     assert book.count("t") == 1
 
 
-def test_grouped_writes_nest(book: Book) -> None:
+def test_grouped_writes_nest_as_savepoints(book: Book) -> None:
     book.run("CREATE TABLE t (a INTEGER)")
     with book.writing():
         book.run("INSERT INTO t VALUES (1)")
@@ -84,7 +84,7 @@ def test_bad_sql_comes_back_as_a_book_error(book: Book) -> None:
         book.run("SELECT * FROM absent")
 
 
-def test_running_many_rows(book: Book) -> None:
+def test_one_statement_runs_over_many_rows(book: Book) -> None:
     book.run("CREATE TABLE t (a INTEGER)")
     book.run_many("INSERT INTO t VALUES (?)", [(1,), (2,), (3,)])
     assert book.count("t") == 3

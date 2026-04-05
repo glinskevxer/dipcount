@@ -83,7 +83,7 @@ def test_an_inspection_of_a_site_that_is_not_there(district: Book) -> None:
         store.record(district, "SI-0099", clock.moment("2025-06-04 09:00"), "K. Brennaman")
 
 
-def test_a_missing_inspection(district: Book) -> None:
+def test_an_inspection_that_is_not_there(district: Book) -> None:
     with pytest.raises(NotFound):
         store.get(district, "IN-250604-01")
 

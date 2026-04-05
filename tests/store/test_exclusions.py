@@ -99,6 +99,6 @@ def test_an_entry_that_wants_more_than_its_kind(district: Book) -> None:
     assert store.longest_notice(district, ON) == 72
 
 
-def test_a_missing_entry(district: Book) -> None:
+def test_an_entry_that_is_not_there(district: Book) -> None:
     with pytest.raises(NotFound):
         store.get(district, "EX-0099")
