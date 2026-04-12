@@ -120,7 +120,7 @@ class Book:
         self._db.execute(f"SAVEPOINT {name}")
         try:
             yield self
-        except BaseException:
+        except BaseException:  # a savepoint rolls back on anything, not just errors
             self._db.execute(f"ROLLBACK TO {name}")
             self._db.execute(f"RELEASE {name}")
             self._depth -= 1

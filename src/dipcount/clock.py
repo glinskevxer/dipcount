@@ -32,6 +32,7 @@ def zone(name: str = DEFAULT_ZONE) -> ZoneInfo:
     """The time zone by name, refusing an unknown one with our own error."""
     try:
         return ZoneInfo(name)
+    # zoneinfo raises three different things for one spelling mistake
     except Exception as exc:
         raise UsageError(f"unknown time zone {name}") from exc
 

@@ -429,6 +429,30 @@ CLAUSES: Final[tuple[Clause, ...]] = (
         "A leaving date is written once and not written again.",
     ),
     Clause(
+        "pool.jar",
+        "a pool comes out of a jar and cannot be bigger than one",
+        "Pools of a species out of one collection cannot add up to more"
+        " females than were counted in it, because there is nowhere else they"
+        " could have come from.",
+    ),
+    Clause(
+        "product.withdrawn",
+        "a product comes off the shelf once",
+        "A withdrawn product is not withdrawn again, and it cannot come off"
+        " before the day it went on.",
+    ),
+    Clause(
+        "trap.retired",
+        "a trap comes off the round once",
+        "A retired trap takes no more collections, and it cannot be retired"
+        " before the day it went up.",
+    ),
+    Clause(
+        "weather.station",
+        "a station reads between the day it opened and the day it closed",
+        "A reading outside that is a reading from somewhere else, and a station is closed once.",
+    ),
+    Clause(
         "site.extent",
         "a site is measured in the unit its habitat uses",
         "Structures are counted one at a time and ground is measured in acres."

@@ -32,7 +32,7 @@ class Desk:
         opened = Book(self.path)
         try:
             require_ready(opened)
-        except BaseException:
+        except BaseException:  # whatever went wrong, the file handle closes
             opened.close()
             raise
         return opened
