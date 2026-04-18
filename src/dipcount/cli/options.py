@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypeVar
 
 import click
 
@@ -16,10 +15,8 @@ from dipcount.report import sheet
 from dipcount.store import Book, require_ready
 from dipcount.units import Quantity
 
-F = TypeVar("F", bound=Callable[..., Any])
 
-
-@dataclass
+@dataclass(frozen=True)
 class Desk:
     """What every command needs: which book, and who is asking."""
 

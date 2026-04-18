@@ -24,10 +24,11 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 
 from dipcount import clock, rules
-from dipcount.model.applicator import PUBLIC_HEALTH
+from dipcount.model.applicator import PUBLIC_HEALTH, Applicator
 from dipcount.model.block import Block, Notice, Run
 from dipcount.model.exclusion import Exclusion
-from dipcount.model.product import ADULTICIDE
+from dipcount.model.lot import Lot
+from dipcount.model.product import ADULTICIDE, Product
 from dipcount.rules import Refusal
 from dipcount.store import applicators, audit, blocks, inventory, products, runs
 from dipcount.store.book import Book
@@ -202,11 +203,6 @@ def spray(
     block = blocks.resolve(book, block_id)
     lot = inventory.get(book, lot_id)
     product = products.get(book, lot.product)
-    if product.purpose != ADULTICIDE:
-        Refusal(
-            "label.site",
-            f"{product.name} is a {product.purpose} and does not go through a fogger",
-        ).raise_it()
     tonight = window(
         book,
         block.id,
@@ -215,6 +211,38 @@ def spray(
         temperature=temperature,
         acres=acres,
     )
+    _refuse_the_run(holder, lot, product, started_at, tonight)
+    return _record_run(
+        book,
+        holder,
+        block,
+        lot,
+        product,
+        started_at,
+        finished_at,
+        amount,
+        tonight,
+        equipment=equipment,
+        temperature=temperature,
+        wind_mph=wind_mph,
+        wind_from=wind_from,
+        note=note,
+    )
+
+
+def _refuse_the_run(
+    holder: Applicator,
+    lot: Lot,
+    product: Product,
+    started_at: dt.datetime,
+    tonight: Window,
+) -> None:
+    """Raise the first thing that stops this run, if anything does."""
+    if product.purpose != ADULTICIDE:
+        Refusal(
+            "label.site",
+            f"{product.name} is a {product.purpose} and does not go through a fogger",
+        ).raise_it()
     tonight.check()
     on = clock.in_zone(started_at).date()
     if not holder.licensed(on) or not holder.may_apply(
@@ -228,6 +256,26 @@ def spray(
         ).raise_it()
     if lot.expired(on):
         Refusal("stock.expired", f"{lot.id} went out of date on {lot.expires_on}").raise_it()
+
+
+def _record_run(
+    book: Book,
+    holder: Applicator,
+    block: Block,
+    lot: Lot,
+    product: Product,
+    started_at: dt.datetime,
+    finished_at: dt.datetime,
+    amount: Quantity,
+    tonight: Window,
+    *,
+    equipment: str,
+    temperature: float | None,
+    wind_mph: float | None,
+    wind_from: str,
+    note: str,
+) -> Run:
+    """Write the run, draw the product, and leave the trail line."""
     with book.writing():
         made = runs.write(
             book,

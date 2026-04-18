@@ -69,41 +69,51 @@ class Finding:
         )
 
 
+def _finding(
+    site: Site,
+    inspection: Inspection,
+    verdict: str,
+    figure: Decimal,
+    days: int,
+    reasons: tuple[str, ...],
+) -> Finding:
+    """One finding, with the parts every verdict shares filled in."""
+    return Finding(
+        site=site.id,
+        inspection=inspection.id,
+        verdict=verdict,
+        per_dip=inspection.per_dip if inspection.water else Decimal(0),
+        threshold=figure,
+        next_visit=inspection.on + dt.timedelta(days=days),
+        reasons=reasons,
+    )
+
+
+def _past_treating(inspection: Inspection, figure: Decimal) -> bool:
+    """Whether the brood is past what a larvicide reaches.
+
+    Both halves have to hold. A brood that is mostly pupae is past treating,
+    but only if there was going to be a treatment: two larvae and two pupae is
+    half pupae and it is not a brood.
+    """
+    if not inspection.dips:
+        return False
+    immatures = Decimal(inspection.larvae + inspection.pupae) / Decimal(inspection.dips)
+    return immatures >= figure and inspection.pupal_share >= rules.PUPAL_STOP
+
+
 def assess(site: Site, inspection: Inspection) -> Finding:
     """Say what an inspection means for the site it was made at."""
-    on = inspection.on
     interval = site.kind.interval_days
     vector = rules.carries_a_vector(inspection.species_seen())
     figure = rules.threshold(site.habitat, vector)
-    reasons: list[str] = []
+    reasons: list[str] = ["larval.vector"] if vector else []
 
     if not inspection.water:
-        return Finding(
-            site.id,
-            inspection.id,
-            DRY,
-            Decimal(0),
-            figure,
-            on + dt.timedelta(days=interval),
-            ("larval.dry",),
-        )
+        return _finding(site, inspection, DRY, figure, interval, ("larval.dry",))
 
-    if vector:
-        reasons.append("larval.vector")
-
-    immatures = Decimal(inspection.larvae + inspection.pupae)
-    per_immature_dip = immatures / Decimal(inspection.dips) if inspection.dips else Decimal(0)
-
-    if per_immature_dip >= figure and inspection.pupal_share >= rules.PUPAL_STOP:
-        return Finding(
-            site.id,
-            inspection.id,
-            PAST,
-            inspection.per_dip,
-            figure,
-            on + dt.timedelta(days=3),
-            (*reasons, "larval.pupal"),
-        )
+    if _past_treating(inspection, figure):
+        return _finding(site, inspection, PAST, figure, 3, (*reasons, "larval.pupal"))
 
     if inspection.per_dip >= figure:
         reasons.append("larval.threshold")
@@ -111,37 +121,13 @@ def assess(site: Site, inspection: Inspection) -> Finding:
         if inspection.late_share >= rules.LATE_URGENT:
             reasons.append("larval.late")
             verdict = URGENT
-        return Finding(
-            site.id,
-            inspection.id,
-            verdict,
-            inspection.per_dip,
-            figure,
-            on + dt.timedelta(days=interval),
-            tuple(reasons),
-        )
+        return _finding(site, inspection, verdict, figure, interval, tuple(reasons))
 
     if inspection.rafts and not inspection.larvae:
         reasons.append("larval.raft")
-        return Finding(
-            site.id,
-            inspection.id,
-            WATCH,
-            inspection.per_dip,
-            figure,
-            on + dt.timedelta(days=rules.RAFT_INTERVAL),
-            tuple(reasons),
-        )
+        return _finding(site, inspection, WATCH, figure, rules.RAFT_INTERVAL, tuple(reasons))
 
-    return Finding(
-        site.id,
-        inspection.id,
-        NOTHING,
-        inspection.per_dip,
-        figure,
-        on + dt.timedelta(days=interval),
-        tuple(reasons),
-    )
+    return _finding(site, inspection, NOTHING, figure, interval, tuple(reasons))
 
 
 def inspect(

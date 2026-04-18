@@ -26,6 +26,7 @@ from decimal import Decimal
 
 from dipcount import clock
 from dipcount.errors import RuleViolation
+from dipcount.model.applicator import Applicator
 from dipcount.model.lot import APPLIED, Lot
 from dipcount.model.product import Label, Product
 from dipcount.model.site import Site
@@ -85,6 +86,54 @@ def _rate_at(label: Label, strength: str) -> Rate:
     return label.middle()
 
 
+def _under_the_cap(
+    book: Book,
+    site: Site,
+    product: Product,
+    label: Label,
+    on: dt.date,
+    over: Quantity,
+    wanted: Rate,
+) -> tuple[Rate, Quantity, Quantity | None, Quantity | None, Refusal | None]:
+    """Bring a rate down to what the season leaves, and say if it cannot be."""
+    used, left_rate = _season(book, site, product, label, on)
+    left = None if left_rate is None else left_rate.over(over)
+    amount = wanted.over(over)
+    if left is not None and amount > left:
+        wanted, amount, capped = _fit_to_cap(label, over, left)
+        return wanted, amount, used, left, capped
+    return wanted, amount, used, left, None
+
+
+def _off_label(label: Label, wanted: Rate) -> Refusal:
+    """The refusal a rate outside the labelled range earns."""
+    return Refusal(
+        "label.rate",
+        f"{wanted} is outside {label.low.amount} to {label.high.amount} per {label.per}",
+    )
+
+
+def _standing_refusals(
+    site: Site,
+    product: Product,
+    over: Quantity,
+    on: dt.date,
+) -> list[Refusal]:
+    """Everything that stops an application before the label is read at all."""
+    out: list[Refusal] = []
+    if not site.is_open(on):
+        out.append(Refusal("site.retired", f"{site.id} was not on the list on {on}"))
+    if not product.on_shelf(on):
+        out.append(Refusal("label.shelf", f"{product.name} was not on the shelf on {on}"))
+    if not site.kind.allows(product.form):
+        out.append(Refusal("label.form", f"a {site.kind.name} does not take a {product.form}"))
+    if over.unit == site.extent.unit and over > site.extent:
+        out.append(
+            Refusal("treat.extent", f"{site.id} is {site.extent} and {over} was asked for"),
+        )
+    return out
+
+
 def plan(
     book: Book,
     site_id: str,
@@ -99,16 +148,7 @@ def plan(
     site = sites.get(book, site_id)
     product = products.resolve(book, product_id)
     over = extent if extent is not None else site.extent
-    refusals: list[Refusal] = []
-
-    if not site.is_open(on):
-        refusals.append(Refusal("site.retired", f"{site.id} was not on the list on {on}"))
-    if not product.on_shelf(on):
-        refusals.append(Refusal("label.shelf", f"{product.name} was not on the shelf on {on}"))
-    if not site.kind.allows(product.form):
-        refusals.append(
-            Refusal("label.form", f"a {site.kind.name} does not take a {product.form}"),
-        )
+    refusals = _standing_refusals(site, product, over, on)
 
     label = _label_of(product, site)
     if label is None:
@@ -122,10 +162,6 @@ def plan(
             Refusal("treat.extent", f"a {site.kind.name} is measured in {site.extent.unit}"),
         )
         return Plan(site.id, product.id, on, over, refusals=tuple(refusals))
-    if over > site.extent:
-        refusals.append(
-            Refusal("treat.extent", f"{site.id} is {site.extent} and {over} was asked for"),
-        )
 
     gap = _interval_refusal(book, site, product, label, on)
     if gap is not None:
@@ -133,21 +169,14 @@ def plan(
 
     wanted = rate if rate is not None else _rate_at(label, strength)
     if not label.covers(wanted):
-        refusals.append(
-            Refusal(
-                "label.rate",
-                f"{wanted} is outside {label.low.amount} to {label.high.amount} per {label.per}",
-            ),
-        )
+        refusals.append(_off_label(label, wanted))
         return Plan(site.id, product.id, on, over, rate=wanted, refusals=tuple(refusals))
 
-    used, left_rate = _season(book, site, product, label, on)
-    left = None if left_rate is None else left_rate.over(over)
-    amount = wanted.over(over)
-    if left is not None and amount > left:
-        wanted, amount, capped = _fit_to_cap(label, over, left)
-        if capped is not None:
-            refusals.append(capped)
+    wanted, amount, used, left, capped = _under_the_cap(
+        book, site, product, label, on, over, wanted
+    )
+    if capped is not None:
+        refusals.append(capped)
 
     return Plan(
         site=site.id,
@@ -292,6 +321,35 @@ def treat(
         refused.raise_it()
     assert made.amount is not None
     _lot_refusals(book, lot, product, on, made.amount)
+    return _record(
+        book,
+        holder,
+        site_id,
+        lot,
+        product,
+        at,
+        made,
+        equipment=equipment,
+        inspection=inspection,
+        note=note,
+    )
+
+
+def _record(
+    book: Book,
+    holder: Applicator,
+    site_id: str,
+    lot: Lot,
+    product: Product,
+    at: dt.datetime,
+    made: Plan,
+    *,
+    equipment: str,
+    inspection: str | None,
+    note: str,
+) -> Treatment:
+    """Write the treatment, draw the product, and leave the trail line."""
+    assert made.amount is not None
     with book.writing():
         record = treatments.write(
             book,
