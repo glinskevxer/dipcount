@@ -39,6 +39,14 @@ class Index:
     species: str = ""
 
     @property
+    def reasons(self) -> tuple[str, ...]:
+        """The clauses that decided what this index counts."""
+        out = ["adult.threshold"]
+        if self.dropped:
+            out.append("adult.broken")
+        return tuple(out)
+
+    @property
     def value(self) -> Decimal:
         """The index itself, which is nothing when nothing ran."""
         if self.nights == 0:
@@ -77,6 +85,11 @@ class Trend:
     baseline: Decimal | None
     seasons: int = 0
     years: tuple[int, ...] = field(default_factory=tuple)
+
+    @property
+    def reasons(self) -> tuple[str, ...]:
+        """The clauses this trend rests on."""
+        return (*self.index.reasons, "adult.baseline")
 
     @property
     def has_baseline(self) -> bool:

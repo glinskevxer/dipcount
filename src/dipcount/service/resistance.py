@@ -60,6 +60,14 @@ class Finding:
         return self.verdict in (RESISTANT, POSSIBLE)
 
     @property
+    def reasons(self) -> tuple[str, ...]:
+        """The clauses that decided what this finding is worth."""
+        out = ["resistance.species"]
+        if self.stale:
+            out.append("resistance.stale")
+        return tuple(out)
+
+    @property
     def mode(self) -> str | None:
         """The mode of action this active belongs to, if it is known."""
         try:

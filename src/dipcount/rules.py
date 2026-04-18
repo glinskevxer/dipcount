@@ -326,7 +326,8 @@ CLAUSES: Final[tuple[Clause, ...]] = (
     Clause(
         "equipment.retired",
         "a machine out of service applies nothing",
-        "A retired machine takes no calibration and makes no run.",
+        "A retired machine takes no calibration and makes no run, whatever"
+        " the last one said about it and however busy the week is.",
     ),
     Clause(
         "request.clock",
@@ -345,12 +346,16 @@ CLAUSES: Final[tuple[Clause, ...]] = (
     Clause(
         "request.visited",
         "a call is visited once",
-        "The visit is the answer. A second visit is a second call.",
+        "The visit is the answer, and it is recorded once. Somebody going"
+        " back a second time is answering a second call, and it is written"
+        " down as one.",
     ),
     Clause(
         "request.closed",
         "a closed call takes no more work",
-        "Nothing is assigned to it, visited on it or closed again.",
+        "Nothing is assigned to it, visited on it, or closed again. Reopening"
+        " work on a closed call means taking a new one, which is what keeps"
+        " the answer times honest.",
     ),
     Clause(
         "resistance.species",
@@ -421,12 +426,16 @@ CLAUSES: Final[tuple[Clause, ...]] = (
     Clause(
         "licence.renewal",
         "a renewal runs forward",
-        "A new certification period ends after the one it replaces.",
+        "A new certification period ends after the one it replaces. A renewal"
+        " that shortens a licence is a typing mistake, and one that repeats"
+        " the same dates is not a renewal.",
     ),
     Clause(
         "licence.left",
         "somebody leaves once",
-        "A leaving date is written once and not written again.",
+        "A leaving date is written once and not written again. Somebody who"
+        " comes back is added again, because the licence they come back with"
+        " is not the one they left with.",
     ),
     Clause(
         "pool.jar",
