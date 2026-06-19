@@ -1,0 +1,235 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]" -c constraints.txt
+      - run: python -m ruff check .
+      - run: python -m ruff format --check .
+      - run: python -m mypy
+
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]" -c constraints.txt
+      - run: python -m dipcount.tools.check_docstrings
+      - run: python -m dipcount.tools.check_layers
+      - run: python -m dipcount.tools.check_wiring
+      - run: python -m dipcount.tools.check_tests
+      - run: python -m dipcount.tools.check_cli
+      - run: python -m dipcount.tools.check_sql
+      - run: python -m dipcount.tools.check_indexes
+      - run: python -m dipcount.tools.check_migrations
+      - run: python -m dipcount.tools.check_naming
+      - run: python -m dipcount.tools.check_errors
+      - run: python -m dipcount.tools.check_design
+      - run: python -m dipcount.tools.check_rules
+      - run: python -m dipcount.tools.check_package
+      - run: python -m dipcount.tools.check_readme
+      - run: python -m dipcount.tools.schema_dump --check
+      - run: python -m dipcount.tools.build_glossary --check
+      - run: python -m dipcount.tools.build_rules --check
+      - run: python -m dipcount.tools.release_check
+
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]" -c constraints.txt
+      - run: python -m pytest -q
+
+  everything:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]" -c constraints.txt
+      - run: ./check.sh
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]" -c constraints.txt
+      - run: python -m pytest -q --cov --cov-report=json --cov-report=term-missing
+      - run: python -m dipcount.tools.coverage_gate --floor 95 --file-floor 80 --worst 6
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage.json
+
+  installed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install .
+      - run: dipcount --version
+      - run: python -m dipcount.tools.smoke --quiet
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip build
+      - run: python -m build
+      - run: python -m pip install dist/*.whl
+      - run: python -c "import dipcount; print(dipcount.__version__)"
+      - run: python -m dipcount.tools.smoke --quiet
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+  walk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install .
+      - name: work a season through the console script
+        run: |
+          set -euo pipefail
+          book=/tmp/walk.sqlite3
+          rm -f "$book"
+          dipcount --book "$book" book init
+          dipcount --book "$book" zone add north --supervisor "R. Vandeburg"
+          dipcount --book "$book" zone add south --supervisor "T. Okwuosa"
+          dipcount --book "$book" site add north "Weller Road basins" \
+            --habitat catch_basin --extent "14 each" --on 2025-03-01
+          dipcount --book "$book" site add north "Sawyer marsh" \
+            --habitat cattail_marsh --extent "6 acre" --on 2025-03-01
+          dipcount --book "$book" crew add "K. Brennaman" PA-44192 --grade certified \
+            --category core --category "public health" --category aquatic \
+            --certified 2024-03-01 --expires 2027-03-01
+          dipcount --book "$book" crew add "D. Uzoma" PA-44193 --grade technician \
+            --category core --category "public health" \
+            --certified 2024-03-01 --expires 2027-03-01 --under AP-001
+          dipcount --book "$book" product stock --on 2025-01-15
+          dipcount --book "$book" product for cattail_marsh
+          dipcount --book "$book" lot receive "Bactilore G" 24G-1187 "400 lb" --on 2025-03-03
+          dipcount --book "$book" lot receive "Kestrel ULV" 25K-0114 "30 gal" --on 2025-03-03
+          dipcount --book "$book" wx station "Ambrose airport" north --opened 2025-01-01
+          dipcount --book "$book" wx record ST-0001 --on 2025-06-03 \
+            --high 84 --low 62 --rain 0.7
+          dipcount --book "$book" wx units ST-0001 --from 2025-06-03 --to 2025-06-03
+          dipcount --book "$book" dip due --on 2025-06-04
+          dipcount --book "$book" dip record SI-0002 --at "2025-06-04 09:00" \
+            --dips 10 --count CXPP 2 12
+          dipcount --book "$book" dip show IN-250604-01
+          dipcount --book "$book" treat plan SI-0002 "Bactilore G" --on 2025-06-04
+          dipcount --book "$book" crew for SI-0002 "Bactilore G" --on 2025-06-04
+          dipcount --book "$book" treat apply SI-0002 LT-0001 --by AP-001 \
+            --at "2025-06-04 10:40"
+          dipcount --book "$book" treat show TX-250604-01
+          dipcount --book "$book" trap add "Ambrose gravid 1" north --kind gravid \
+            --on 2025-03-01
+          dipcount --book "$book" trap collect TR-0001 --set "2025-06-03 16:30" \
+            --pulled "2025-06-04 08:15" --catch CXPP F 120 --catch CXPP M 40
+          dipcount --book "$book" trap index 2025-W23
+          dipcount --book "$book" pool submit CO-250604-01 CXPP 50 --on 2025-06-05 \
+            --lab "state health"
+          dipcount --book "$book" pool submit CO-250604-01 CXPP 50 --on 2025-06-05
+          dipcount --book "$book" pool result PL-250605-01 "West Nile" positive \
+            --on 2025-06-09 --ct 27.4
+          dipcount --book "$book" pool result PL-250605-02 "West Nile" negative --on 2025-06-09
+          dipcount --book "$book" virus week 2025-W23
+          dipcount --book "$book" virus season 2025 --first 22 --last 25
+          dipcount --book "$book" block add "Ardmore east grid" north --acres 640 \
+            --road-miles 18.4 --on 2025-04-01
+          dipcount --book "$book" register add "Ferrand apiary" north --kind apiary \
+            --contact "M. Ferrand" --phone "555 0142" --on 2025-04-01
+          dipcount --book "$book" block link "Ardmore east grid" EX-0001
+          dipcount --book "$book" spray waiting "Ardmore east grid" --at "2025-07-10 21:10"
+          dipcount --book "$book" spray tell EX-0001 "Ardmore east grid" \
+            --at "2025-07-08 09:00" --from "2025-07-10 20:00" --to "2025-07-11 02:00"
+          dipcount --book "$book" spray window "Ardmore east grid" \
+            --at "2025-07-10 21:10" --wind 4.5 --temperature 74
+          dipcount --book "$book" shop add 40-11872 --kind "ulv fogger" --maker Larkspur \
+            --model XLR-40 --nominal "1.5 fl oz" --swath 300 --on 2024-05-01
+          dipcount --book "$book" shop calibrate EQ-001 --on 2025-07-09 \
+            --flow "1.5 fl oz" --droplet 17 --speed 10
+          dipcount --book "$book" shop speed EQ-001 "0.0033 fl oz" --on 2025-07-09
+          dipcount --book "$book" spray go "Ardmore east grid" LT-0002 --by AP-001 \
+            --start "2025-07-10 21:10" --finish "2025-07-10 22:40" \
+            --amount "1.4 gal" --wind 4.5 --temperature 74 --wind-from SW
+          dipcount --book "$book" spray show RN-250710-01
+          dipcount --book "$book" call take "1400 Weir Street" --kind biting --zone north \
+            --at "2025-06-04 09:15" --caller "A. Sandoval"
+          dipcount --book "$book" call answer SR-0001 --at "2025-06-05 09:15" --site SI-0001
+          dipcount --book "$book" call close SR-0001 "basins treated" --at "2025-06-05 16:00"
+          dipcount --book "$book" assay run S-methoprene CXPP --dose 43 --minutes 30 \
+            --on 2025-08-12 --zone north \
+            --bottle 1 20 25 --bottle 2 20 25 --bottle 3 20 25 --bottle 4 20 25
+          dipcount --book "$book" assay board --on 2025-08-20
+          dipcount --book "$book" assay advice SI-0001 --on 2025-08-20
+          dipcount --book "$book" report week 2025-W23
+          dipcount --book "$book" report season 2025 --on 2025-08-20
+          dipcount --book "$book" report board --on 2025-08-20
+          dipcount --book "$book" report use --year 2025
+          dipcount --book "$book" report export all --into /tmp/walk-out
+          dipcount --book "$book" book counts
+          dipcount --book "$book" book check
+          dipcount --book "$book" book terms --word "vector index"
+          dipcount --book "$book" about
