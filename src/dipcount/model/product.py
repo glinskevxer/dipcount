@@ -28,7 +28,7 @@ from dipcount import habitat as hb
 from dipcount import ids
 from dipcount.errors import UsageError
 from dipcount.rows import Row
-from dipcount.units import Quantity, Rate
+from dipcount.units import COUNT, MASS, Quantity, Rate
 
 LARVICIDE: Final = "larvicide"
 PUPICIDE: Final = "pupicide"
@@ -119,6 +119,7 @@ class Product:
     restricted: bool = False
     signal: str = CAUTION
     reentry: int = 0
+    unit_mass: Quantity | None = None
     withdrawn_on: dt.date | None = None
     note: str = ""
     labels: tuple[Label, ...] = field(default_factory=tuple)
@@ -139,6 +140,7 @@ class Product:
             raise UsageError(f"{self.percent} is not a share of active ingredient")
         if self.reentry < 0:
             raise UsageError("a reentry interval cannot be negative")
+        self._check_unit_mass()
         if self.withdrawn_on is not None and self.withdrawn_on < self.added_on:
             raise UsageError("a product cannot be withdrawn before it was added")
         if len({one.habitat for one in self.labels}) != len(self.labels):
@@ -161,9 +163,37 @@ class Product:
         """Every kind of water this product may go into."""
         return sorted(one.habitat for one in self.labels)
 
+    def _check_unit_mass(self) -> None:
+        """Refuse a unit weight that is not a weight."""
+        if self.unit_mass is None:
+            return
+        if self.unit_mass.dimension != MASS:
+            raise UsageError("a unit weighs a mass, not a volume or a count")
+        if self.unit_mass.amount <= 0:
+            raise UsageError("a unit that weighs nothing is not a unit")
+
+    def weight_of(self, amount: Quantity) -> Quantity | None:
+        """What an amount of this product weighs, if that can be said.
+
+        A product measured by weight already answers this. One measured one
+        structure at a time answers it only once somebody has read the weight
+        off the container, which is what ``unit_mass`` is for.
+        """
+        if amount.dimension == MASS:
+            return amount
+        if amount.dimension == COUNT and self.unit_mass is not None:
+            return self.unit_mass * amount.amount
+        return None
+
     def active_in(self, amount: Quantity) -> Quantity:
-        """How much active ingredient an amount of product holds."""
-        return amount * (self.percent / Decimal(100))
+        """How much active ingredient an amount of product holds.
+
+        A count of pouches comes back as a count of pouches unless the shelf
+        knows what one weighs, because a share of a pouch is a share of a
+        pouch.
+        """
+        weighed = self.weight_of(amount)
+        return (weighed or amount) * (self.percent / Decimal(100))
 
     @classmethod
     def from_row(cls, row: Row, labels: tuple[Label, ...] = ()) -> Product:
@@ -182,6 +212,7 @@ class Product:
             restricted=bool(row["restricted"]),
             signal=str(row["signal"]),
             reentry=int(row["reentry"]),
+            unit_mass=Quantity.parse(str(row["unit_mass"])) if row["unit_mass"] else None,
             withdrawn_on=None if withdrawn is None else dt.date.fromisoformat(str(withdrawn)),
             note=str(row["note"]),
             labels=labels,
@@ -201,6 +232,7 @@ class Product:
             "restricted": int(self.restricted),
             "signal": self.signal,
             "reentry": self.reentry,
+            "unit_mass": "" if self.unit_mass is None else str(self.unit_mass),
             "added_on": self.added_on.isoformat(),
             "withdrawn_on": None if self.withdrawn_on is None else self.withdrawn_on.isoformat(),
             "note": self.note,

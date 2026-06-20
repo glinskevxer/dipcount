@@ -14,11 +14,11 @@ from dipcount.units import Quantity, Rate
 
 _PRODUCT = (
     "id, name, registration, maker, active, percent, form, purpose,"
-    " restricted, signal, reentry, added_on, withdrawn_on, note"
+    " restricted, signal, reentry, unit_mass, added_on, withdrawn_on, note"
 )
 _VALUES = (
     ":id, :name, :registration, :maker, :active, :percent, :form, :purpose,"
-    " :restricted, :signal, :reentry, :added_on, :withdrawn_on, :note"
+    " :restricted, :signal, :reentry, :unit_mass, :added_on, :withdrawn_on, :note"
 )
 _LABEL = "product, habitat, low_rate, high_rate, per, season_max, interval_days"
 
@@ -54,6 +54,7 @@ def add(
     restricted: bool = False,
     signal: str = "caution",
     reentry: int = 0,
+    unit_mass: Quantity | None = None,
     note: str = "",
 ) -> Product:
     """Put a product on the shelf."""
@@ -74,6 +75,7 @@ def add(
         restricted=restricted,
         signal=signal,
         reentry=reentry,
+        unit_mass=unit_mass,
         note=note,
     )
     book.run(f"INSERT INTO product ({_PRODUCT}) VALUES ({_VALUES})", made.to_row())

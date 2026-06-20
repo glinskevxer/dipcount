@@ -43,6 +43,7 @@ class Entry:
     restricted: bool = False
     signal: str = "caution"
     reentry: int = 0
+    unit_mass: str = ""
     note: str = ""
 
 
@@ -82,6 +83,7 @@ SHELF: Final[tuple[Entry, ...]] = (
             ("livestock_trough", "1 each", "1 each", "6 each", 30),
             ("sump", "1 each", "2 each", "8 each", 30),
         ),
+        unit_mass="0.35 oz",
         note="one pouch to a structure, and two where the sump runs deep",
     ),
     Entry(
@@ -96,6 +98,7 @@ SHELF: Final[tuple[Entry, ...]] = (
             ("catch_basin", "1 each", "1 each", "2 each", 120),
             ("sump", "1 each", "2 each", "4 each", 120),
         ),
+        unit_mass="1.2 oz",
         note="a hundred and fifty days out of one briquet, so the basin round is twice a year",
     ),
     Entry(
@@ -230,6 +233,7 @@ def stock(book: Book, on: dt.date, *, only: tuple[str, ...] = ()) -> list[str]:
             restricted=entry.restricted,
             signal=entry.signal,
             reentry=entry.reentry,
+            unit_mass=quantity(entry.unit_mass) if entry.unit_mass else None,
             note=entry.note,
         )
         for habitat, low, high, cap, gap in entry.rates:

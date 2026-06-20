@@ -184,3 +184,37 @@ def test_a_restricted_adulticide_carries_its_signal_word() -> None:
     assert product.restricted
     assert product.signal == DANGER
     assert product.reentry == 12
+
+
+def test_a_unit_weight_has_to_be_a_weight() -> None:
+    with pytest.raises(UsageError, match="weighs a mass"):
+        a_product(unit_mass=quantity("2 fl oz"))
+    with pytest.raises(UsageError, match="weighs nothing"):
+        a_product(unit_mass=quantity("0 oz"))
+
+
+def test_a_product_weighed_by_the_pound_needs_no_unit_weight() -> None:
+    made = a_product()
+    assert made.unit_mass is None
+    assert made.weight_of(quantity("10 lb")) == quantity("10 lb")
+
+
+def test_a_count_weighs_nothing_until_the_shelf_says_what_one_weighs() -> None:
+    pouches = a_product(form="water soluble pouch")
+    assert pouches.weight_of(quantity("14 each")) is None
+    weighed = a_product(form="water soluble pouch", unit_mass=quantity("0.35 oz"))
+    assert weighed.weight_of(quantity("14 each")) == quantity("4.9 oz")
+
+
+def test_the_active_in_a_count_follows_the_unit_weight() -> None:
+    weighed = a_product(
+        form="water soluble pouch",
+        percent=Decimal("37"),
+        unit_mass=quantity("0.35 oz"),
+    )
+    assert weighed.active_in(quantity("100 each")) == quantity("12.95 oz")
+
+
+def test_the_active_in_a_count_with_no_weight_stays_a_count() -> None:
+    pouches = a_product(form="water soluble pouch", percent=Decimal("37"))
+    assert pouches.active_in(quantity("100 each")).unit == "each"

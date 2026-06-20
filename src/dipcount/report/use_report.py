@@ -26,7 +26,7 @@ from dipcount.model.product import Product
 from dipcount.report.sheet import Sheet, table
 from dipcount.store import blocks, products, runs, sites, treatments
 from dipcount.store.book import Book
-from dipcount.units import COUNT, Quantity
+from dipcount.units import Quantity
 
 COLUMNS = (
     "day",
@@ -146,15 +146,14 @@ class Return:
     def by_active(self) -> dict[str, Quantity]:
         """How much of each active ingredient went out, where it can be said.
 
-        A product measured one structure at a time is left out. A share of a
-        pouch is a share of a pouch, and until the district records what a
-        pouch weighs there is no honest way to add it into a total in pounds.
-        Those lines come back from :meth:`counted_actives` instead, so a
-        return that leaves them out says so rather than losing them.
+        A pouch or a briquet reaches this total once the shelf records what
+        one weighs. Until it does, a share of a pouch is a share of a pouch,
+        and those lines come back from :meth:`counted_actives` instead so that
+        a return leaving them out says so rather than losing them.
         """
         out: dict[str, Quantity] = {}
         for one in self.filed:
-            if one.amount.dimension == COUNT:
+            if one.product.weight_of(one.amount) is None:
                 continue
             applied = one.active_applied
             held = out.get(one.product.active)
@@ -162,10 +161,10 @@ class Return:
         return out
 
     def counted_actives(self) -> dict[str, Quantity]:
-        """The applications whose amount is a count of structures."""
+        """The applications the shelf has no unit weight for."""
         out: dict[str, Quantity] = {}
         for one in self.filed:
-            if one.amount.dimension != COUNT:
+            if one.product.weight_of(one.amount) is not None:
                 continue
             held = out.get(one.product.active)
             out[one.product.active] = (

@@ -500,6 +500,14 @@ CREATE INDEX run_by_product ON run (product);
 CREATE INDEX treatment_by_inspection ON treatment (inspection);
 """
 
+_V17 = """
+-- A product measured one structure at a time could not be added into an
+-- active ingredient total, because a share of a pouch is a share of a pouch.
+-- The container says what one weighs, so the shelf records it and the return
+-- can report the pouches in pounds like everything else.
+ALTER TABLE product ADD COLUMN unit_mass TEXT NOT NULL DEFAULT '';
+"""
+
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "zones sites and the audit trail", _V1),
     Migration(2, "inspections and what the dipper found", _V2),
@@ -517,6 +525,7 @@ MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(14, "service requests and how they were answered", _V14),
     Migration(15, "bottle bioassays and the readings off them", _V15),
     Migration(16, "the three foreign keys nothing was indexing", _V16),
+    Migration(17, "what one briquet or one pouch weighs", _V17),
 )
 
 

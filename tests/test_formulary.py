@@ -155,3 +155,25 @@ def test_the_season_cap_can_be_asked_for_directly() -> None:
 def test_the_actives_on_the_starting_shelf_are_listed() -> None:
     assert "spinosad" in formulary.actives()
     assert len(formulary.actives()) >= 6
+
+
+def test_the_counted_products_say_what_one_weighs(stocked: Book) -> None:
+    for name in ("Bactilore WSP", "Hesper 30 briquets"):
+        found = products.find_by_name(stocked, name)
+        assert found is not None
+        assert found.unit_mass is not None
+        assert found.unit_mass.dimension == "mass"
+
+
+def test_the_products_measured_by_weight_carry_no_unit_weight(stocked: Book) -> None:
+    found = products.find_by_name(stocked, "Bactilore G")
+    assert found is not None
+    assert found.unit_mass is None
+
+
+def test_a_pouch_now_reports_an_active_ingredient_in_ounces(stocked: Book) -> None:
+    found = products.find_by_name(stocked, "Bactilore WSP")
+    assert found is not None
+    applied = found.active_in(quantity("100 each"))
+    assert applied.dimension == "mass"
+    assert applied > quantity("0 oz")

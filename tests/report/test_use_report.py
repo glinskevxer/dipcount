@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from decimal import Decimal
 
 import pytest
 
@@ -8,8 +9,18 @@ from dipcount import clock, formulary
 from dipcount.model.applicator import AQUATIC, CERTIFIED, CORE, PUBLIC_HEALTH
 from dipcount.report import use_report as report
 from dipcount.service import adulticide, larvicide
-from dipcount.store import Book, applicators, blocks, inventory, sites, treatments, upgrade, zones
-from dipcount.units import quantity
+from dipcount.store import (
+    Book,
+    applicators,
+    blocks,
+    inventory,
+    products,
+    sites,
+    treatments,
+    upgrade,
+    zones,
+)
+from dipcount.units import quantity, rate
 
 LISTED = dt.date(2025, 3, 1)
 SEASON = (dt.date(2025, 1, 1), dt.date(2025, 12, 31))
@@ -119,7 +130,9 @@ def test_the_actives_are_totalled_off_the_share(district: Book) -> None:
     assert found.by_active()[active] == quantity("1.6875 lb")
 
 
-def test_a_pouch_product_is_not_added_into_a_total_in_pounds(district: Book) -> None:
+def test_a_pouch_reaches_the_total_once_the_shelf_knows_what_one_weighs(
+    district: Book,
+) -> None:
     inventory.receive(district, "Bactilore WSP", "24W-0801", quantity("500 each"), LISTED)
     sites.add(district, "north", "Weller Road", "catch_basin", quantity("14 each"), LISTED)
     treat(district)
@@ -132,12 +145,30 @@ def test_a_pouch_product_is_not_added_into_a_total_in_pounds(district: Book) -> 
     )
     found = report.season(district, 2025)
     active = "Bacillus thuringiensis subspecies israelensis"
-    assert found.by_active()[active] == quantity("1.6875 lb")
-    assert found.counted_actives()[active].unit == "each"
+    assert found.by_active()[active] > quantity("1.6875 lb")
+    assert found.counted_actives() == {}
 
 
-def test_the_not_weighable_lines_are_shown_rather_than_lost(district: Book) -> None:
-    inventory.receive(district, "Bactilore WSP", "24W-0801", quantity("500 each"), LISTED)
+def test_a_product_with_no_unit_weight_is_shown_rather_than_lost(district: Book) -> None:
+    products.add(
+        district,
+        "Ridgeline briquets",
+        "99999-4",
+        "Ridgeline",
+        "S-methoprene",
+        Decimal("2.1"),
+        "briquet",
+        "larvicide",
+        LISTED,
+    )
+    products.label(
+        district,
+        "PD-0011",
+        "catch_basin",
+        rate("1 briquet/basin"),
+        rate("1 briquet/basin"),
+    )
+    inventory.receive(district, "Ridgeline briquets", "R-0001", quantity("200 each"), LISTED)
     sites.add(district, "north", "Weller Road", "catch_basin", quantity("14 each"), LISTED)
     larvicide.treat(
         district,
@@ -146,8 +177,9 @@ def test_the_not_weighable_lines_are_shown_rather_than_lost(district: Book) -> N
         "LT-0003",
         clock.moment("2025-06-05 10:40"),
     )
-    text = report.season(district, 2025).totals_sheet().render()
-    assert "not weighable" in text
+    found = report.season(district, 2025)
+    assert found.counted_actives()["S-methoprene"].unit == "each"
+    assert "not weighable" in found.totals_sheet().render()
 
 
 def test_the_restricted_applications_are_kept_apart(district: Book) -> None:
