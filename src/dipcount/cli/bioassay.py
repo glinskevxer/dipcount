@@ -6,11 +6,11 @@ from decimal import Decimal
 
 import click
 
-from dipcount.cli.options import Desk, day_or_today, echo_pairs, echo_rows, pass_desk
+from dipcount.cli.options import Desk, day_or_today, echo_pairs, echo_rows, pass_desk, zone_id
 from dipcount.model.bioassay import CONTROL, CONTROL_CORRECT, CONTROL_VOID, SOURCES, Reading
 from dipcount.service import resistance
 from dipcount.store import bioassays as store
-from dipcount.store import products, sites, zones
+from dipcount.store import products, sites
 
 
 def _share(value: Decimal | None) -> str:
@@ -58,7 +58,7 @@ def run(
         Reading(label, minutes, int(knocked), int(total)) for label, knocked, total in readings
     ]
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
+        zone = zone_id(opened, zone_name)
         made = store.start(
             opened,
             active,
@@ -68,7 +68,7 @@ def run(
             desk.actor,
             dose,
             minutes,
-            zone_id=zone_id,
+            zone_id=zone,
             readings=bottles,
             note=note,
         )
@@ -143,8 +143,8 @@ def board(desk: Desk, on_text: str | None, zone_name: str | None) -> None:
     """Every active and species pair, and where it stands."""
     on = day_or_today(on_text, desk.zone_name)
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
-        found = resistance.board(opened, on, zone_id=zone_id)
+        zone = zone_id(opened, zone_name)
+        found = resistance.board(opened, on, zone_id=zone)
     echo_rows(
         ["active", "mode", "species", "verdict", "run", "age", "suspect"],
         [

@@ -12,10 +12,11 @@ from dipcount.cli.options import (
     moment_or_now,
     pass_desk,
     read_quantity,
+    zone_id,
 )
 from dipcount.model.block import WAYS
 from dipcount.service import adulticide
-from dipcount.store import blocks, exclusions, products, runs, zones
+from dipcount.store import blocks, exclusions, products, runs
 
 
 @click.group()
@@ -157,13 +158,13 @@ def board(
     """Every block and whether the truck may go out on it."""
     at = clock.moment(at_text, desk.zone_name)
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
+        zone = zone_id(opened, zone_name)
         found = adulticide.tonight_board(
             opened,
             at,
             wind_mph=wind,
             temperature=temperature,
-            zone_id=zone_id,
+            zone_id=zone,
         )
         names = {one.id: one.name for one in blocks.all_blocks(opened)}
     echo_rows(

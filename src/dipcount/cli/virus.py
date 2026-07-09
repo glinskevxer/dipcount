@@ -5,10 +5,9 @@ from __future__ import annotations
 import click
 
 from dipcount import clock, rules, species
-from dipcount.cli.options import Desk, echo_pairs, echo_rows, pass_desk
+from dipcount.cli.options import Desk, echo_pairs, echo_rows, pass_desk, zone_id
 from dipcount.model.trap import KINDS
 from dipcount.service import virus as service
-from dipcount.store import zones
 
 
 @click.group(name="virus")
@@ -53,8 +52,8 @@ def week(
     """The whole picture for one reporting week."""
     year, number = clock.read_week(label)
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
-        found = service.picture(opened, year, number, virus_name, kind=kind, zone_id=zone_id)
+        zone = zone_id(opened, zone_name)
+        found = service.picture(opened, year, number, virus_name, kind=kind, zone_id=zone)
     echo_pairs(
         [
             ("week", found.label),
@@ -99,7 +98,7 @@ def season(
 ) -> None:
     """One line for every week of a season."""
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
+        zone = zone_id(opened, zone_name)
         weeks = service.season(
             opened,
             year,
@@ -107,7 +106,7 @@ def season(
             first=first,
             last=last,
             kind=kind,
-            zone_id=zone_id,
+            zone_id=zone,
         )
     echo_rows(
         ["week", "abundance", "pools", "positive", "rate", "index", "level"],

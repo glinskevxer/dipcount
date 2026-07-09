@@ -12,11 +12,11 @@ from dipcount.cli.options import (
     echo_rows,
     moment_or_now,
     pass_desk,
+    zone_id,
 )
 from dipcount.model.trap import KINDS, Catch
 from dipcount.service import trapping
 from dipcount.store import traps as store
-from dipcount.store import zones
 
 
 @click.group()
@@ -83,8 +83,8 @@ def add(
 def list_them(desk: Desk, zone_name: str | None, kind: str | None) -> None:
     """Every trap station."""
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
-        found = store.all_traps(opened, zone_id=zone_id, kind=kind)
+        zone = zone_id(opened, zone_name)
+        found = store.all_traps(opened, zone_id=zone, kind=kind)
     echo_rows(
         ["id", "name", "zone", "kind", "listed", "retired"],
         [
@@ -168,8 +168,8 @@ def due(desk: Desk, on_text: str | None, every: int, zone_name: str | None) -> N
     """Every trap that has not been run lately."""
     on = day_or_today(on_text, desk.zone_name)
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
-        waiting = trapping.due(opened, on, every=every, zone_id=zone_id)
+        zone = zone_id(opened, zone_name)
+        waiting = trapping.due(opened, on, every=every, zone_id=zone)
         rows = []
         for one in waiting:
             last = store.last_for_trap(opened, one.id)
@@ -243,13 +243,13 @@ def index(
     """The index for one reporting week, against the seasons before it."""
     year, week = clock.read_week(label)
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
+        zone = zone_id(opened, zone_name)
         found = trapping.trend(
             opened,
             year,
             week,
             kind,
-            zone_id=zone_id,
+            zone_id=zone,
             code=code.upper(),
             seasons=seasons,
         )
@@ -291,8 +291,8 @@ def season(
 ) -> None:
     """One index for every week of a season."""
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
-        weeks = trapping.season(opened, year, kind, first=first, last=last, zone_id=zone_id)
+        zone = zone_id(opened, zone_name)
+        weeks = trapping.season(opened, year, kind, first=first, last=last, zone_id=zone)
     echo_rows(
         ["week", "collections", "females", "nights", "index", "over"],
         [

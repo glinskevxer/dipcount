@@ -11,11 +11,11 @@ from dipcount.cli.options import (
     echo_rows,
     moment_or_now,
     pass_desk,
+    zone_id,
 )
 from dipcount.model.request import answer_hours, kinds, why
 from dipcount.service import requests as service
 from dipcount.store import requests as store
-from dipcount.store import zones
 
 
 @click.group()
@@ -128,11 +128,11 @@ def waiting(desk: Desk, at_text: str | None, zone_name: str | None, only_late: b
     """Every call nobody has been out to, tightest clock first."""
     at = moment_or_now(at_text, desk.zone_name)
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
+        zone = zone_id(opened, zone_name)
         found = (
-            service.overdue(opened, at, zone_id=zone_id)
+            service.overdue(opened, at, zone_id=zone)
             if only_late
-            else service.waiting(opened, at, zone_id=zone_id)
+            else service.waiting(opened, at, zone_id=zone)
         )
     echo_rows(
         ["id", "kind", "zone", "address", "taken", "due", "hours left", "late"],

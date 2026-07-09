@@ -8,10 +8,9 @@ from pathlib import Path
 import click
 
 from dipcount import clock, species
-from dipcount.cli.options import Desk, day_or_today, echo_sheet, pass_desk
+from dipcount.cli.options import Desk, day_or_today, echo_sheet, pass_desk, zone_id
 from dipcount.report import export, season, use_report, weekly
 from dipcount.report.sheet import table
-from dipcount.store import zones
 
 
 @click.group()
@@ -28,8 +27,8 @@ def week(desk: Desk, label: str, zone_name: str | None, virus_name: str) -> None
     """The week's surveillance and work on one sheet."""
     year, number = clock.read_week(label)
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
-        found = weekly.weekly(opened, year, number, zone_id=zone_id, virus_name=virus_name)
+        zone = zone_id(opened, zone_name)
+        found = weekly.weekly(opened, year, number, zone_id=zone, virus_name=virus_name)
     click.echo(found.render())
 
 

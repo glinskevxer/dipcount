@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import click
 
-from dipcount.cli.options import Desk, day_or_today, echo_pairs, echo_rows, pass_desk
+from dipcount.cli.options import Desk, day_or_today, echo_pairs, echo_rows, pass_desk, zone_id
 from dipcount.model.exclusion import kinds
 from dipcount.store import blocks as store
-from dipcount.store import exclusions, zones
+from dipcount.store import exclusions
 
 
 @click.group()
@@ -53,8 +53,8 @@ def add(
 def list_them(desk: Desk, zone_name: str | None, on_text: str | None) -> None:
     """Every block."""
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
-        found = store.all_blocks(opened, zone_id=zone_id)
+        zone = zone_id(opened, zone_name)
+        found = store.all_blocks(opened, zone_id=zone)
         if on_text is not None:
             on = day_or_today(on_text, desk.zone_name)
             found = [one for one in found if one.is_open(on)]
@@ -221,8 +221,8 @@ def add_entry(
 def list_entries(desk: Desk, zone_name: str | None, kind: str | None, on_text: str | None) -> None:
     """Everything on the register."""
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
-        found = exclusions.all_entries(opened, zone_id=zone_id, kind=kind)
+        zone = zone_id(opened, zone_name)
+        found = exclusions.all_entries(opened, zone_id=zone, kind=kind)
         if on_text is not None:
             on = day_or_today(on_text, desk.zone_name)
             found = [one for one in found if one.on_register(on)]

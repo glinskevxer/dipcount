@@ -7,11 +7,10 @@ from decimal import Decimal
 import click
 
 from dipcount import clock, rules
-from dipcount.cli.options import Desk, day_or_today, echo_pairs, echo_rows, pass_desk
+from dipcount.cli.options import Desk, day_or_today, echo_pairs, echo_rows, pass_desk, zone_id
 from dipcount.model.weather import BASE_F, METHODS, MODIFIED
 from dipcount.service import weather as service
 from dipcount.store import weather as store
-from dipcount.store import zones
 
 
 @click.group()
@@ -53,8 +52,8 @@ def add_station(
 def list_stations(desk: Desk, zone_name: str | None) -> None:
     """Every station the district reads."""
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
-        found = store.all_stations(opened, zone_id=zone_id)
+        zone = zone_id(opened, zone_name)
+        found = store.all_stations(opened, zone_id=zone)
     echo_rows(
         ["id", "name", "zone", "opened", "closed"],
         [

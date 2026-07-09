@@ -12,9 +12,10 @@ from dipcount.cli.options import (
     echo_rows,
     pass_desk,
     read_quantity,
+    zone_id,
 )
 from dipcount.service import district
-from dipcount.store import sites, zones
+from dipcount.store import sites
 
 
 @click.group()
@@ -76,8 +77,8 @@ def list_them(
 ) -> None:
     """The site list."""
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
-        found = sites.all_sites(opened, zone_id=zone_id, habitat=habitat)
+        zone = zone_id(opened, zone_name)
+        found = sites.all_sites(opened, zone_id=zone, habitat=habitat)
         if open_text is not None:
             on = day_or_today(open_text, desk.zone_name)
             found = [one for one in found if one.is_open(on)]

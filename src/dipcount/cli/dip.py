@@ -12,10 +12,11 @@ from dipcount.cli.options import (
     echo_rows,
     moment_or_now,
     pass_desk,
+    zone_id,
 )
 from dipcount.model.inspection import STAGES, Tally, stage_name
 from dipcount.service import survey
-from dipcount.store import inspections, sites, zones
+from dipcount.store import inspections, sites
 
 
 @click.group()
@@ -76,8 +77,8 @@ def due(desk: Desk, on_text: str | None, zone_name: str | None) -> None:
     """Every site that is due for a visit."""
     on = day_or_today(on_text, desk.zone_name)
     with desk.book() as opened:
-        zone_id = None if zone_name is None else zones.resolve(opened, zone_name).id
-        waiting = survey.due(opened, on, zone_id=zone_id)
+        zone = zone_id(opened, zone_name)
+        waiting = survey.due(opened, on, zone_id=zone)
     echo_rows(
         ["site", "zone", "name", "habitat", "due", "days"],
         [

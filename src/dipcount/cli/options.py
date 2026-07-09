@@ -12,7 +12,7 @@ import click
 
 from dipcount import clock
 from dipcount.report import sheet
-from dipcount.store import Book, require_ready
+from dipcount.store import Book, require_ready, zones
 from dipcount.units import Quantity
 
 
@@ -64,6 +64,16 @@ class Desk:
 
 
 pass_desk = click.make_pass_decorator(Desk)
+
+
+def zone_id(opened: Book, name: str | None) -> str | None:
+    """The zone a ``--zone`` option names, or nothing when it was not given.
+
+    Sixteen commands wanted this line, and two of them had it slightly
+    differently, which is how a filter comes to work in one report and not in
+    the one beside it.
+    """
+    return None if name is None else zones.resolve(opened, name).id
 
 
 def read_quantity(text: str) -> Quantity:
