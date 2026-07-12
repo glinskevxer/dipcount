@@ -8,7 +8,7 @@ from collections.abc import Iterable
 from dipcount import clock, ids
 from dipcount.errors import Duplicate, NotFound
 from dipcount.model.inspection import Inspection, Tally
-from dipcount.store import sites
+from dipcount.store import sites, window
 from dipcount.store.book import Book, Row
 
 _COLUMNS = "id, site, at, inspector, water, dips, note"
@@ -94,11 +94,10 @@ def for_site(
     params: list[object] = [site_id]
     if since is not None:
         clauses.append("at >= ?")
-        params.append(clock.to_utc(clock.moment(f"{since.isoformat()} 00:00")).isoformat())
+        params.append(window.bounds(since, since)[0])
     if until is not None:
-        after = until + dt.timedelta(days=1)
         clauses.append("at < ?")
-        params.append(clock.to_utc(clock.moment(f"{after.isoformat()} 00:00")).isoformat())
+        params.append(window.bounds(until, until)[1])
     rows = book.all(
         f"SELECT {_COLUMNS} FROM inspection WHERE {' AND '.join(clauses)} ORDER BY at",
         params,
@@ -108,11 +107,9 @@ def for_site(
 
 def between(book: Book, start: dt.date, end: dt.date) -> list[Inspection]:
     """Every inspection over a run of local days, both ends included."""
-    first = clock.moment(f"{start.isoformat()} 00:00")
-    after = clock.moment(f"{(end + dt.timedelta(days=1)).isoformat()} 00:00")
     rows = book.all(
         f"SELECT {_COLUMNS} FROM inspection WHERE at >= ? AND at < ? ORDER BY at",
-        (clock.to_utc(first).isoformat(), clock.to_utc(after).isoformat()),
+        window.bounds(start, end),
     )
     return [_load(book, row) for row in rows]
 

@@ -7,7 +7,7 @@ import datetime as dt
 from dipcount import clock, ids
 from dipcount.errors import NotFound
 from dipcount.model.treatment import Treatment
-from dipcount.store import inventory, products, sites
+from dipcount.store import inventory, products, sites, window
 from dipcount.store.book import Book
 from dipcount.units import Quantity
 
@@ -85,10 +85,7 @@ def between(
     product_id: str | None = None,
 ) -> list[Treatment]:
     """Every treatment over a run of local days, narrowed if asked."""
-    first = clock.to_utc(clock.moment(f"{start.isoformat()} 00:00")).isoformat()
-    after = clock.to_utc(
-        clock.moment(f"{(end + dt.timedelta(days=1)).isoformat()} 00:00"),
-    ).isoformat()
+    first, after = window.bounds(start, end)
     clauses = ["at >= ?", "at < ?"]
     params: list[object] = [first, after]
     if site_id is not None:

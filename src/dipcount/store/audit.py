@@ -7,6 +7,7 @@ import datetime as dt
 from dipcount import clock
 from dipcount.errors import NotFound
 from dipcount.model.audit import Entry
+from dipcount.store import window
 from dipcount.store.book import Book
 
 _COLUMNS = "seq, at, actor, action, subject, detail"
@@ -58,7 +59,7 @@ def between(book: Book, start: dt.datetime, end: dt.datetime) -> list[Entry]:
     """Every line in a window, oldest first."""
     rows = book.all(
         f"SELECT {_COLUMNS} FROM audit WHERE at >= ? AND at < ? ORDER BY seq",
-        (clock.to_utc(start).isoformat(), clock.to_utc(end).isoformat()),
+        (window.from_moment(start), window.from_moment(end)),
     )
     return [Entry.from_row(row) for row in rows]
 

@@ -8,7 +8,7 @@ from collections.abc import Iterable
 from dipcount import clock, ids
 from dipcount.errors import Duplicate, NotFound, RuleViolation
 from dipcount.model.trap import Catch, Collection, Trap
-from dipcount.store import zones
+from dipcount.store import window, zones
 from dipcount.store.book import Book, Row
 
 _TRAP = "id, zone, name, kind, latitude, longitude, listed_on, retired_on, note"
@@ -184,10 +184,7 @@ def between(
     book: Book, start: dt.date, end: dt.date, *, trap_id: str | None = None
 ) -> list[Collection]:
     """Every collection pulled over a run of local days."""
-    first = clock.to_utc(clock.moment(f"{start.isoformat()} 00:00")).isoformat()
-    after = clock.to_utc(
-        clock.moment(f"{(end + dt.timedelta(days=1)).isoformat()} 00:00"),
-    ).isoformat()
+    first, after = window.bounds(start, end)
     clauses = ["pulled_at >= ?", "pulled_at < ?"]
     params: list[object] = [first, after]
     if trap_id is not None:

@@ -7,7 +7,7 @@ import datetime as dt
 from dipcount import clock, ids
 from dipcount.errors import NotFound, RuleViolation
 from dipcount.model.request import Request
-from dipcount.store import applicators, sites, zones
+from dipcount.store import applicators, sites, window, zones
 from dipcount.store.book import Book
 
 _COLUMNS = (
@@ -139,10 +139,7 @@ def all_requests(
 
 def between(book: Book, start: dt.date, end: dt.date) -> list[Request]:
     """Every call taken over a run of local days."""
-    first = clock.to_utc(clock.moment(f"{start.isoformat()} 00:00")).isoformat()
-    after = clock.to_utc(
-        clock.moment(f"{(end + dt.timedelta(days=1)).isoformat()} 00:00"),
-    ).isoformat()
+    first, after = window.bounds(start, end)
     rows = book.all(
         f"SELECT {_COLUMNS} FROM request WHERE taken_at >= ? AND taken_at < ?"
         " ORDER BY taken_at, id",
