@@ -6,7 +6,7 @@ import pytest
 
 from dipcount.errors import BookError
 from dipcount.store import Book
-from dipcount.store.book import _split_statements
+from dipcount.store.book import MEMORY, _split_statements
 
 
 def test_opening_a_book_that_is_not_there_is_refused(book_path: Path) -> None:
@@ -133,3 +133,27 @@ def test_an_empty_query_gives_nothing(book: Book) -> None:
 
 def test_a_fresh_book_passes_its_own_integrity_check(book: Book) -> None:
     assert book.integrity() == "ok"
+
+
+def test_a_book_in_a_read_only_directory_refuses_cleanly(tmp_path: Path) -> None:
+    into = tmp_path / "locked"
+    into.mkdir()
+    into.chmod(0o500)
+    try:
+        with pytest.raises(BookError):
+            Book.create(into / "district.sqlite3")
+    finally:
+        into.chmod(0o700)
+
+
+def test_every_book_a_test_opens_is_closed(book: Book) -> None:
+    book.run("CREATE TABLE t (a INTEGER)")
+    book.close()
+    with pytest.raises(BookError):
+        book.count("t")
+
+
+def test_closing_twice_is_not_an_error(book: Book) -> None:
+    book.close()
+    book.close()
+    assert book.path == MEMORY

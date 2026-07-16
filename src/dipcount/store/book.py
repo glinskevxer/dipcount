@@ -16,6 +16,11 @@ silently throws away a savepoint a migration is standing inside. So
 And a book is closed. An unclosed sqlite connection is silence on 3.12 and a
 ``ResourceWarning`` on 3.13, blamed on whichever test the collector happened
 to run next.
+
+Opening is wrapped as well. A directory the process cannot write, a path that
+is a directory, and a file that is not a database all come out of sqlite as an
+``OperationalError``, which says nothing to a caller trying to tell a bad
+request from a broken book.
 """
 
 from __future__ import annotations
@@ -77,7 +82,12 @@ class Book:
         if isinstance(self.path, Path) and not create and not self.path.exists():
             raise BookError(f"there is no book at {self.path}")
         target = MEMORY if self.path == MEMORY else str(self.path)
-        self._db = sqlite3.connect(target, isolation_level=None)
+        try:
+            self._db = sqlite3.connect(target, isolation_level=None)
+        except sqlite3.Error as exc:
+            # a directory the process cannot write, a path that is a
+            # directory, a file that is not a database
+            raise BookError(f"cannot open a book at {self.path}: {exc}") from exc
         self._db.row_factory = sqlite3.Row
         self._db.execute("PRAGMA foreign_keys = ON")
         self._db.execute("PRAGMA busy_timeout = 4000")
