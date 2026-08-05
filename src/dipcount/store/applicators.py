@@ -8,6 +8,7 @@ from decimal import Decimal
 from dipcount import ids
 from dipcount.errors import Duplicate, NotFound, RuleViolation
 from dipcount.model.applicator import CERTIFIED, Applicator, Credit
+from dipcount.store import numbering
 from dipcount.store.book import Book
 
 _APPLICATOR = (
@@ -18,11 +19,6 @@ _VALUES = (
     " :supervisor, :left_on, :note"
 )
 _CREDIT = "seq, applicator, on_day, category, hours, course"
-
-
-def numbers(book: Book) -> list[str]:
-    """Every applicator id already issued."""
-    return [str(row["id"]) for row in book.all("SELECT id FROM applicator")]
 
 
 def add(
@@ -50,7 +46,7 @@ def add(
                 f"{boss.name} is a {boss.grade} and cannot supervise anybody",
             )
     holder = Applicator(
-        id=ids.next_serial("applicator", numbers(book)),
+        id=numbering.next_serial(book, "applicator", "applicator"),
         name=name,
         licence=licence,
         grade=grade,

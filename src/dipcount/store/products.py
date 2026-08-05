@@ -9,6 +9,7 @@ from dipcount import habitat as hb
 from dipcount import ids
 from dipcount.errors import Duplicate, NotFound, RuleViolation
 from dipcount.model.product import Label, Product
+from dipcount.store import numbering
 from dipcount.store.book import Book, Row
 from dipcount.units import Quantity, Rate
 
@@ -21,11 +22,6 @@ _VALUES = (
     " :restricted, :signal, :reentry, :unit_mass, :added_on, :withdrawn_on, :note"
 )
 _LABEL = "product, habitat, low_rate, high_rate, per, season_max, interval_days"
-
-
-def numbers(book: Book) -> list[str]:
-    """Every product id already issued."""
-    return [str(row["id"]) for row in book.all("SELECT id FROM product")]
 
 
 def _labels(book: Book, product_id: str) -> tuple[Label, ...]:
@@ -63,7 +59,7 @@ def add(
     if find_by_registration(book, registration) is not None:
         raise Duplicate("registration", registration)
     made = Product(
-        id=ids.next_serial("product", numbers(book)),
+        id=numbering.next_serial(book, "product", "product"),
         name=name,
         registration=registration,
         maker=maker,

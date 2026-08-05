@@ -5,10 +5,9 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Iterable
 
-from dipcount import ids
 from dipcount.errors import Duplicate, NotFound
 from dipcount.model.bioassay import Bioassay, Reading
-from dipcount.store import zones
+from dipcount.store import numbering, zones
 from dipcount.store.book import Book, Row
 
 _ASSAY = "id, active, species, source, zone, on_day, tested_by, dose_ug, diagnostic, note"
@@ -16,12 +15,6 @@ _VALUES = (
     ":id, :active, :species, :source, :zone, :on_day, :tested_by, :dose_ug, :diagnostic, :note"
 )
 _BOTTLE = "bioassay, label, minute, knocked, total"
-
-
-def numbers_on(book: Book, on: dt.date) -> list[str]:
-    """Every assay id already issued for a day."""
-    rows = book.all("SELECT id FROM bioassay WHERE id LIKE ?", (f"BA-{on:%y%m%d}-%",))
-    return [str(row["id"]) for row in rows]
 
 
 def _readings(book: Book, assay_id: str) -> tuple[Reading, ...]:
@@ -56,7 +49,7 @@ def start(
     if len({(one.label, one.minute) for one in lines}) != len(lines):
         raise Duplicate("reading", "one bottle read twice at one minute")
     made = Bioassay(
-        id=ids.next_dated("bioassay", on, numbers_on(book, on)),
+        id=numbering.next_dated(book, "bioassay", "bioassay", on),
         active=active,
         species=code,
         source=source,

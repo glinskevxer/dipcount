@@ -7,6 +7,7 @@ import datetime as dt
 from dipcount import ids
 from dipcount.errors import Duplicate, NotFound, RuleViolation
 from dipcount.model.equipment import Calibration, Machine
+from dipcount.store import numbering
 from dipcount.store.book import Book
 from dipcount.units import Quantity
 
@@ -18,11 +19,6 @@ _CALIBRATION = "id, equipment, on_day, tested_by, flow, droplet, swath_ft, speed
 _CALIBRATION_VALUES = (
     ":id, :equipment, :on_day, :tested_by, :flow, :droplet, :swath_ft, :speed_mph, :note"
 )
-
-
-def numbers(book: Book) -> list[str]:
-    """Every machine id already issued."""
-    return [str(row["id"]) for row in book.all("SELECT id FROM equipment")]
 
 
 def add(
@@ -41,7 +37,7 @@ def add(
     if find_by_serial(book, serial) is not None:
         raise Duplicate("machine", serial)
     made = Machine(
-        id=ids.next_serial("equipment", numbers(book)),
+        id=numbering.next_serial(book, "equipment", "equipment"),
         kind=kind,
         maker=maker,
         model=model,
@@ -113,12 +109,6 @@ def retire(book: Book, equipment_id: str, on: dt.date, why: str = "") -> Machine
     return get(book, equipment_id)
 
 
-def calibration_numbers(book: Book, on: dt.date) -> list[str]:
-    """Every calibration id already issued for a day."""
-    rows = book.all("SELECT id FROM calibration WHERE id LIKE ?", (f"CA-{on:%y%m%d}-%",))
-    return [str(row["id"]) for row in rows]
-
-
 def calibrate(
     book: Book,
     equipment_id: str,
@@ -139,7 +129,7 @@ def calibrate(
             f"{machine.id} was not in service on {on.isoformat()}",
         )
     made = Calibration(
-        id=ids.next_dated("calibration", on, calibration_numbers(book, on)),
+        id=numbering.next_dated(book, "calibration", "calibration", on),
         equipment=machine.id,
         on=on,
         tested_by=tested_by,

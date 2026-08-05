@@ -8,7 +8,7 @@ from dipcount import clock, ids
 from dipcount.errors import Duplicate, NotFound, RuleViolation
 from dipcount.model.block import Block, Notice
 from dipcount.model.exclusion import Exclusion
-from dipcount.store import exclusions, zones
+from dipcount.store import exclusions, numbering, zones
 from dipcount.store.book import Book
 
 _BLOCK = "id, zone, name, acres, road_miles, listed_on, retired_on, note"
@@ -17,11 +17,6 @@ _NOTICE = "id, exclusion, block, given_at, spray_from, spray_to, how, given_by, 
 _NOTICE_VALUES = (
     ":id, :exclusion, :block, :given_at, :spray_from, :spray_to, :how, :given_by, :note"
 )
-
-
-def numbers(book: Book) -> list[str]:
-    """Every block id already issued."""
-    return [str(row["id"]) for row in book.all("SELECT id FROM block")]
 
 
 def add(
@@ -39,7 +34,7 @@ def add(
     if find_by_name(book, name) is not None:
         raise Duplicate("block", name)
     made = Block(
-        id=ids.next_serial("block", numbers(book)),
+        id=numbering.next_serial(book, "block", "block"),
         zone=zone.id,
         name=name,
         acres=acres,
@@ -148,11 +143,6 @@ def blocks_for(book: Book, exclusion_id: str) -> list[Block]:
     return [get(book, str(row["block"])) for row in rows]
 
 
-def notice_numbers(book: Book) -> list[str]:
-    """Every notice id already issued."""
-    return [str(row["id"]) for row in book.all("SELECT id FROM notice")]
-
-
 def give(
     book: Book,
     exclusion_id: str,
@@ -178,7 +168,7 @@ def give(
             f"{entry.name} is not recorded as falling inside {block.name}",
         )
     made = Notice(
-        id=ids.next_serial("notice", notice_numbers(book)),
+        id=numbering.next_serial(book, "notice", "notice"),
         exclusion=entry.id,
         block=block.id,
         given_at=given_at,

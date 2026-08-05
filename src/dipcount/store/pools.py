@@ -4,20 +4,14 @@ from __future__ import annotations
 
 import datetime as dt
 
-from dipcount import clock, ids, species
+from dipcount import clock, species
 from dipcount.errors import Duplicate, NotFound, RuleViolation
 from dipcount.model.pool import PENDING, Assay, Pool
-from dipcount.store import traps
+from dipcount.store import numbering, traps
 from dipcount.store.book import Book, Row
 
 _POOL = "id, collection, species, size, submitted_on, lab, note"
 _ASSAY = "pool, virus, outcome, tested_on, ct"
-
-
-def numbers_on(book: Book, on: dt.date) -> list[str]:
-    """Every pool id already issued for a day."""
-    rows = book.all("SELECT id FROM pool WHERE id LIKE ?", (f"PL-{on:%y%m%d}-%",))
-    return [str(row["id"]) for row in rows]
 
 
 def _assays(book: Book, pool_id: str) -> tuple[Assay, ...]:
@@ -68,7 +62,7 @@ def submit(
             f" and {already} are already pooled, so {size} more is too many",
         )
     made = Pool(
-        id=ids.next_dated("pool", submitted_on, numbers_on(book, submitted_on)),
+        id=numbering.next_dated(book, "pool", "pool", submitted_on),
         collection=collection.id,
         species=code,
         size=size,

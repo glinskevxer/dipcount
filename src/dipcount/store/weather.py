@@ -7,16 +7,11 @@ import datetime as dt
 from dipcount import ids
 from dipcount.errors import Duplicate, NotFound, RuleViolation
 from dipcount.model.weather import Observation, Station
-from dipcount.store import zones
+from dipcount.store import numbering, zones
 from dipcount.store.book import Book
 
 _STATION = "id, name, zone, elevation, opened_on, closed_on, note"
 _OBSERVATION = "id, station, on_day, high_f, low_f, rain_in, wind_mph, note"
-
-
-def station_numbers(book: Book) -> list[str]:
-    """Every station id already issued."""
-    return [str(row["id"]) for row in book.all("SELECT id FROM station")]
 
 
 def add_station(
@@ -33,7 +28,7 @@ def add_station(
     if find_station(book, name) is not None:
         raise Duplicate("station", name)
     station = Station(
-        id=ids.next_serial("station", station_numbers(book)),
+        id=numbering.next_serial(book, "station", "station"),
         name=name,
         zone=zone.id,
         opened_on=opened_on,
@@ -91,12 +86,6 @@ def close_station(book: Book, station_id: str, on: dt.date) -> Station:
     return get_station(book, station_id)
 
 
-def observation_numbers(book: Book, on: dt.date) -> list[str]:
-    """Every observation id already issued for a day."""
-    rows = book.all("SELECT id FROM observation WHERE on_day = ?", (on.isoformat(),))
-    return [str(row["id"]) for row in rows]
-
-
 def record(
     book: Book,
     station_id: str,
@@ -118,7 +107,7 @@ def record(
     if reading(book, station.id, on) is not None:
         raise Duplicate("observation", f"{station.id} on {on.isoformat()}")
     made = Observation(
-        id=ids.next_dated("observation", on, observation_numbers(book, on)),
+        id=numbering.next_dated(book, "observation", "observation", on),
         station=station.id,
         on=on,
         high_f=high_f,

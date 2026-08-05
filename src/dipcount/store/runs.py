@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import datetime as dt
 
-from dipcount import clock, ids
+from dipcount import clock
 from dipcount.errors import NotFound
 from dipcount.model.block import Run
-from dipcount.store import blocks, inventory, products, window
+from dipcount.store import blocks, inventory, numbering, products, window
 from dipcount.store.book import Book
 from dipcount.units import Quantity
 
@@ -19,12 +19,6 @@ _VALUES = (
     ":id, :block, :product, :lot, :applicator, :licence, :started_at, :finished_at,"
     " :amount, :acres, :equipment, :temperature, :wind_mph, :wind_from, :note"
 )
-
-
-def numbers_on(book: Book, on: dt.date) -> list[str]:
-    """Every run id already issued for a day."""
-    rows = book.all("SELECT id FROM run WHERE id LIKE ?", (f"RN-{on:%y%m%d}-%",))
-    return [str(row["id"]) for row in rows]
 
 
 def write(
@@ -55,7 +49,7 @@ def write(
     products.get(book, lot.product)
     on = clock.in_zone(started_at).date()
     made = Run(
-        id=ids.next_dated("run", on, numbers_on(book, on)),
+        id=numbering.next_dated(book, "run", "run", on),
         block=block.id,
         product=lot.product,
         lot=lot.id,

@@ -4,20 +4,15 @@ from __future__ import annotations
 
 import datetime as dt
 
-from dipcount import clock, ids
+from dipcount import clock
 from dipcount.errors import Duplicate, NotFound, RuleViolation
 from dipcount.model.lot import APPLIED, Draw, Lot, Stock
-from dipcount.store import products
+from dipcount.store import numbering, products
 from dipcount.store.book import Book
 from dipcount.units import Quantity
 
 _LOT = "id, product, code, received_on, quantity, expires_on, held_at, note"
 _DRAW = "seq, lot, at, amount, reason, reference, actor"
-
-
-def numbers(book: Book) -> list[str]:
-    """Every lot id already issued."""
-    return [str(row["id"]) for row in book.all("SELECT id FROM lot")]
 
 
 def receive(
@@ -36,7 +31,7 @@ def receive(
     if find_by_code(book, product.id, code) is not None:
         raise Duplicate("lot", f"{product.name} {code}")
     lot = Lot(
-        id=ids.next_serial("lot", numbers(book)),
+        id=numbering.next_serial(book, "lot", "lot"),
         product=product.id,
         code=code,
         received_on=received_on,

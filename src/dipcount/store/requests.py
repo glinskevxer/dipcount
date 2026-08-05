@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import datetime as dt
 
-from dipcount import clock, ids
+from dipcount import clock
 from dipcount.errors import NotFound, RuleViolation
 from dipcount.model.request import Request
-from dipcount.store import applicators, sites, window, zones
+from dipcount.store import applicators, numbering, sites, window, zones
 from dipcount.store.book import Book
 
 _COLUMNS = (
@@ -18,11 +18,6 @@ _VALUES = (
     ":id, :kind, :zone, :taken_at, :caller, :phone, :address, :detail, :assigned_to,"
     " :visited_at, :site, :closed_at, :outcome, :note"
 )
-
-
-def numbers(book: Book) -> list[str]:
-    """Every request id already issued."""
-    return [str(row["id"]) for row in book.all("SELECT id FROM request")]
 
 
 def take(
@@ -40,7 +35,7 @@ def take(
     """Write down a call as it comes in."""
     zone = zones.resolve(book, zone_id)
     made = Request(
-        id=ids.next_serial("request", numbers(book)),
+        id=numbering.next_serial(book, "request", "request"),
         kind=kind,
         zone=zone.id,
         taken_at=taken_at,

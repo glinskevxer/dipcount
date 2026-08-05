@@ -5,6 +5,7 @@ from __future__ import annotations
 from dipcount import ids
 from dipcount.errors import Duplicate, NotFound
 from dipcount.model.zone import Zone
+from dipcount.store import numbering
 from dipcount.store.book import Book
 
 _COLUMNS = "id, name, supervisor, note"
@@ -14,17 +15,12 @@ def add(book: Book, name: str, supervisor: str = "", note: str = "") -> Zone:
     """Put a new zone on the books."""
     if find_by_name(book, name) is not None:
         raise Duplicate("zone", name)
-    zone = Zone(ids.next_serial("zone", numbers(book)), name, supervisor, note)
+    zone = Zone(numbering.next_serial(book, "zone", "zone"), name, supervisor, note)
     book.run(
         f"INSERT INTO zone ({_COLUMNS}) VALUES (:id, :name, :supervisor, :note)",
         zone.to_row(),
     )
     return zone
-
-
-def numbers(book: Book) -> list[str]:
-    """Every zone id already issued."""
-    return [str(row["id"]) for row in book.all("SELECT id FROM zone")]
 
 
 def get(book: Book, zone_id: str) -> Zone:

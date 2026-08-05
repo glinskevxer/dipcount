@@ -5,10 +5,9 @@ from __future__ import annotations
 import datetime as dt
 
 from dipcount import habitat as hb
-from dipcount import ids
 from dipcount.errors import Duplicate, NotFound, RuleViolation
 from dipcount.model.site import Site
-from dipcount.store import zones
+from dipcount.store import numbering, zones
 from dipcount.store.book import Book
 from dipcount.units import Quantity
 
@@ -19,11 +18,6 @@ _VALUES = (
     ":id, :zone, :name, :habitat, :extent, :listed_on, :access,"
     " :latitude, :longitude, :retired_on, :note"
 )
-
-
-def numbers(book: Book) -> list[str]:
-    """Every site id already issued."""
-    return [str(row["id"]) for row in book.all("SELECT id FROM site")]
 
 
 def add(
@@ -44,7 +38,7 @@ def add(
     if find_by_name(book, zone.id, name) is not None:
         raise Duplicate("site", f"{zone.name}/{name}")
     site = Site(
-        id=ids.next_serial("site", numbers(book)),
+        id=numbering.next_serial(book, "site", "site"),
         zone=zone.id,
         name=name,
         habitat=habitat,

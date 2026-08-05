@@ -8,16 +8,11 @@ from collections.abc import Iterable
 from dipcount import clock, ids
 from dipcount.errors import Duplicate, NotFound, RuleViolation
 from dipcount.model.trap import Catch, Collection, Trap
-from dipcount.store import window, zones
+from dipcount.store import numbering, window, zones
 from dipcount.store.book import Book, Row
 
 _TRAP = "id, zone, name, kind, latitude, longitude, listed_on, retired_on, note"
 _COLLECTION = "id, trap, set_at, pulled_at, nights, worked, handler, note"
-
-
-def trap_numbers(book: Book) -> list[str]:
-    """Every trap id already issued."""
-    return [str(row["id"]) for row in book.all("SELECT id FROM trap")]
 
 
 def add(
@@ -36,7 +31,7 @@ def add(
     if find_by_name(book, name) is not None:
         raise Duplicate("trap", name)
     trap = Trap(
-        id=ids.next_serial("trap", trap_numbers(book)),
+        id=numbering.next_serial(book, "trap", "trap"),
         zone=zone.id,
         name=name,
         kind=kind,
@@ -111,13 +106,6 @@ def retire(book: Book, trap_id: str, on: dt.date, why: str = "") -> Trap:
     return get(book, trap_id)
 
 
-def collection_numbers(book: Book, on: dt.date) -> list[str]:
-    """Every collection id already issued for a day."""
-    stem = f"CO-{on:%y%m%d}-"
-    rows = book.all("SELECT id FROM collection WHERE id LIKE ?", (f"{stem}%",))
-    return [str(row["id"]) for row in rows]
-
-
 def _catches(book: Book, collection_id: str) -> tuple[Catch, ...]:
     rows = book.all(
         "SELECT species, sex, tally FROM catch WHERE collection = ? ORDER BY species, sex",
@@ -150,7 +138,7 @@ def record(
     if len({(one.species, one.sex) for one in lines}) != len(lines):
         raise Duplicate("catch", "one species and sex counted twice")
     made = Collection(
-        id=ids.next_dated("collection", on, collection_numbers(book, on)),
+        id=numbering.next_dated(book, "collection", "collection", on),
         trap=trap.id,
         set_at=set_at,
         pulled_at=pulled_at,

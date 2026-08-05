@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import datetime as dt
 
-from dipcount import clock, ids
+from dipcount import clock
 from dipcount.errors import NotFound
 from dipcount.model.treatment import Treatment
-from dipcount.store import inventory, products, sites, window
+from dipcount.store import inventory, numbering, products, sites, window
 from dipcount.store.book import Book
 from dipcount.units import Quantity
 
@@ -18,12 +18,6 @@ _VALUES = (
     ":id, :site, :product, :lot, :at, :applicator, :licence, :extent, :amount,"
     " :equipment, :inspection, :note"
 )
-
-
-def numbers_on(book: Book, on: dt.date) -> list[str]:
-    """Every treatment id already issued for a day."""
-    rows = book.all("SELECT id FROM treatment WHERE id LIKE ?", (f"TX-{on:%y%m%d}-%",))
-    return [str(row["id"]) for row in rows]
 
 
 def write(
@@ -51,7 +45,7 @@ def write(
     products.get(book, lot.product)
     on = clock.in_zone(at).date()
     made = Treatment(
-        id=ids.next_dated("treatment", on, numbers_on(book, on)),
+        id=numbering.next_dated(book, "treatment", "treatment", on),
         site=site.id,
         product=lot.product,
         lot=lot.id,

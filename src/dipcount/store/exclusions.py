@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import datetime as dt
 
-from dipcount import ids
 from dipcount.errors import Duplicate, NotFound, RuleViolation
 from dipcount.model.exclusion import Exclusion, sort_of
-from dipcount.store import zones
+from dipcount.store import numbering, zones
 from dipcount.store.book import Book
 
 _COLUMNS = (
@@ -17,11 +16,6 @@ _VALUES = (
     ":id, :kind, :name, :zone, :contact, :phone, :buffer_ft, :notice_hours,"
     " :listed_on, :removed_on, :note"
 )
-
-
-def numbers(book: Book) -> list[str]:
-    """Every register id already issued."""
-    return [str(row["id"]) for row in book.all("SELECT id FROM exclusion")]
 
 
 def add(
@@ -43,7 +37,7 @@ def add(
     if find(book, kind, name) is not None:
         raise Duplicate("register entry", f"{kind} {name}")
     entry = Exclusion(
-        id=ids.next_serial("exclusion", numbers(book)),
+        id=numbering.next_serial(book, "exclusion", "exclusion"),
         kind=kind,
         name=name,
         zone=zone.id,

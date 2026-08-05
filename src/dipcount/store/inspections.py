@@ -5,20 +5,13 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Iterable
 
-from dipcount import clock, ids
+from dipcount import clock
 from dipcount.errors import Duplicate, NotFound
 from dipcount.model.inspection import Inspection, Tally
-from dipcount.store import sites, window
+from dipcount.store import numbering, sites, window
 from dipcount.store.book import Book, Row
 
 _COLUMNS = "id, site, at, inspector, water, dips, note"
-
-
-def numbers_on(book: Book, on: dt.date) -> list[str]:
-    """Every inspection id already issued for a day."""
-    stem = f"IN-{on:%y%m%d}-"
-    rows = book.all("SELECT id FROM inspection WHERE id LIKE ?", (f"{stem}%",))
-    return [str(row["id"]) for row in rows]
 
 
 def _tallies(book: Book, inspection_id: str) -> tuple[Tally, ...]:
@@ -52,7 +45,7 @@ def record(
     if len(seen) != len(lines):
         raise Duplicate("tally", "one species and stage counted twice")
     inspection = Inspection(
-        id=ids.next_dated("inspection", on, numbers_on(book, on)),
+        id=numbering.next_dated(book, "inspection", "inspection", on),
         site=site_id,
         at=at,
         inspector=inspector,
