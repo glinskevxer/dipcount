@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from decimal import Decimal
 
 import pytest
 
@@ -8,8 +9,17 @@ from dipcount import clock, formulary, rules
 from dipcount.model.applicator import AQUATIC, CERTIFIED, CORE, PUBLIC_HEALTH
 from dipcount.model.bioassay import CONTROL, FIELD, RESISTANT, SUSCEPTIBLE, Reading
 from dipcount.service import larvicide, resistance
-from dipcount.store import Book, applicators, bioassays, inventory, sites, upgrade, zones
-from dipcount.units import quantity
+from dipcount.store import (
+    Book,
+    applicators,
+    bioassays,
+    inventory,
+    products,
+    sites,
+    upgrade,
+    zones,
+)
+from dipcount.units import quantity, rate
 
 ON = dt.date(2025, 8, 12)
 LISTED = dt.date(2025, 3, 1)
@@ -60,7 +70,7 @@ def assay(
         zone_id="north",
         readings=readings,
     )
-    return made.id
+    return str(made.id)
 
 
 def test_nothing_assayed_reads_as_untested(district: Book) -> None:
@@ -225,3 +235,86 @@ def test_what_has_never_been_run_at_a_site_is_listed(district: Book) -> None:
 
 def test_the_species_behind_a_finding_can_be_looked_up() -> None:
     assert resistance.species_of("CXPP").binomial == "Culex pipiens"
+
+
+def unknown_product(book: Book) -> str:
+    """A product whose active ingredient the mode table has never heard of."""
+    made = products.add(
+        book,
+        "Ridgeline novel",
+        "99999-9",
+        "Ridgeline",
+        "chlorantraniliprole",
+        Decimal("18.4"),
+        "granule",
+        "larvicide",
+        LISTED,
+    )
+    products.label(
+        book,
+        made.id,
+        "cattail_marsh",
+        rate("2 lb/acre"),
+        rate("8 lb/acre"),
+        interval_days=7,
+    )
+    return str(made.id)
+
+
+def test_a_finding_names_the_species_clause_and_the_stale_one(district: Book) -> None:
+    assay(district, "S-methoprene", "CXPP", 20, on=dt.date(2022, 8, 12))
+    found = resistance.standing(district, "S-methoprene", "CXPP", ON)
+    assert found.reasons == ("resistance.species", "resistance.stale")
+
+
+def test_a_fresh_finding_names_only_the_species_clause(district: Book) -> None:
+    assay(district, "S-methoprene", "CXPP", 20)
+    found = resistance.standing(district, "S-methoprene", "CXPP", ON)
+    assert found.reasons == ("resistance.species",)
+
+
+def test_an_active_the_mode_table_has_never_heard_of(district: Book) -> None:
+    unknown_product(district)
+    found = resistance.standing(district, "chlorantraniliprole", "CXPP", ON)
+    assert found.mode is None
+
+
+def test_a_product_in_no_known_mode_gets_no_rotation_warning(district: Book) -> None:
+    unknown_product(district)
+    sites.add(district, "north", "Sawyer marsh", "cattail_marsh", quantity("6 acre"), LISTED)
+    assert resistance.rotation_warning(district, "SI-0003", "Ridgeline novel", ON) is None
+
+
+def test_a_treatment_of_an_unknown_active_reads_as_unknown(district: Book) -> None:
+    made = unknown_product(district)
+    sites.add(district, "north", "Sawyer marsh", "cattail_marsh", quantity("6 acre"), LISTED)
+    inventory.receive(district, made, "R-0001", quantity("200 lb"), LISTED)
+    larvicide.treat(
+        district,
+        "AP-001",
+        "SI-0003",
+        "LT-0004",
+        clock.moment("2025-06-04 10:40"),
+    )
+    assert resistance.rotation(district, "SI-0003", ON) == ["unknown"]
+
+
+def test_a_treatment_after_the_day_asked_about_is_left_out(district: Book) -> None:
+    larvicide.treat(district, "AP-001", "SI-0001", "LT-0001", clock.moment("2025-06-04 10:40"))
+    assert resistance.rotation(district, "SI-0001", dt.date(2025, 6, 1)) == []
+    assert resistance.rotation(district, "SI-0001", ON) == ["bacterial toxin"]
+
+
+def test_the_board_reports_one_line_a_pair_however_many_runs(district: Book) -> None:
+    assay(district, "S-methoprene", "CXPP", 25, on=dt.date(2025, 7, 1))
+    assay(district, "S-methoprene", "CXPP", 20)
+    found = resistance.board(district, ON)
+    assert len(found) == 1
+    assert found[0].verdict == RESISTANT
+
+
+def test_the_alternatives_leave_out_an_active_in_no_known_mode(district: Book) -> None:
+    unknown_product(district)
+    sites.add(district, "north", "Sawyer marsh", "cattail_marsh", quantity("6 acre"), LISTED)
+    found = resistance.alternatives(district, "SI-0003", "Bactilore G", ON)
+    assert "Ridgeline novel" not in [one.name for one in found]

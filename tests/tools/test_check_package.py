@@ -57,3 +57,54 @@ def test_the_check_runs_as_a_module() -> None:
     with pytest.raises(SystemExit) as raised:
         check_package.main()
     assert raised.value.code == 0
+
+
+def test_a_version_that_does_not_agree_is_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(dipcount, "__version__", "9.9.9")
+    found = check_package.versions_agree()
+    assert found
+    assert "9.9.9" in found[0].what
+
+
+def test_a_loose_dependency_is_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(check_package, "_declared", lambda: ["click>=8"])
+    found = check_package.pins()
+    assert [one.what for one in found] == ["click>=8 is not pinned"]
+
+
+def test_a_pin_the_constraints_do_not_carry_is_found(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(check_package, "_declared", lambda: ["nothing==1.0"])
+    found = check_package.pins()
+    assert [one.what for one in found] == ["does not carry nothing"]
+
+
+def test_a_pin_at_the_wrong_version_is_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(check_package, "_declared", lambda: ["click==7.0"])
+    found = check_package.pins()
+    assert "pins click at 8.1.8" in found[0].what
+
+
+def test_a_console_script_pointing_nowhere_is_found(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        check_package,
+        "pyproject",
+        lambda: {"project": {"scripts": {"dipcount": "nothing.at.all:main"}}},
+    )
+    found = check_package.scripts()
+    assert "points at nothing.at.all" in found[0].what
+
+
+def test_a_console_script_wanting_a_missing_attribute_is_found(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        check_package,
+        "pyproject",
+        lambda: {"project": {"scripts": {"dipcount": "dipcount.clock:nothing"}}},
+    )
+    found = check_package.scripts()
+    assert "wants dipcount.clock:nothing" in found[0].what

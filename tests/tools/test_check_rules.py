@@ -77,3 +77,34 @@ def test_the_adult_clauses_are_named_by_the_index() -> None:
 def test_a_full_week_names_only_the_threshold_clause() -> None:
     made = Index(2025, 23, "gravid", 40, Decimal(1), 1)
     assert made.reasons == ("adult.threshold",)
+
+
+def test_a_clause_with_no_heading_is_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    thin = rules.Clause("larval.thin", "", "a" * 80)
+    monkeypatch.setattr("dipcount.rules.CLAUSES", (thin,))
+    found = check_rules.clause_shape()
+    assert any("no heading" in one.what for one in found)
+
+
+def test_a_clause_that_says_almost_nothing_is_found(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    thin = rules.Clause("larval.thin", "a heading", "too short")
+    monkeypatch.setattr("dipcount.rules.CLAUSES", (thin,))
+    assert any("almost nothing" in one.what for one in check_rules.clause_shape())
+
+
+def test_a_clause_name_without_an_area_is_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    odd = rules.Clause("thin", "a heading", "a" * 80)
+    monkeypatch.setattr("dipcount.rules.CLAUSES", (odd,))
+    assert any("is not area.name" in one.what for one in check_rules.clause_shape())
+
+
+def test_a_documented_name_that_is_not_a_clause_is_found(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(check_rules, "DOCUMENTED_ONLY", frozenset({"nothing.here"}))
+    found = check_rules.documented_only_exists()
+    assert [one.what for one in found] == [
+        "nothing.here is on the documented list and is not a clause",
+    ]
