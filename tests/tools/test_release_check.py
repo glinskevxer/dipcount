@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from dipcount import __version__
@@ -55,3 +57,44 @@ def test_the_check_runs_as_a_module() -> None:
     with pytest.raises(SystemExit) as raised:
         release_check.main()
     assert raised.value.code == 0
+
+
+def test_a_leftover_is_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "one.py"
+    path.write_text('"""A file."""\n\n# TODO: finish this\n')
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    found = release_check.leftovers()
+    assert [one.what for one in found] == ["has a TODO"]
+
+
+def test_a_print_outside_the_checks_is_found(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "one.py"
+    path.write_text('"""A file."""\n\nprint("hello")\n')
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    monkeypatch.setattr(source, "dotted", lambda _: "dipcount.service.survey")
+    assert [one.what for one in release_check.printing()] == ["prints"]
+
+
+def test_a_stale_document_is_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("dipcount.tools.build_rules.matches", lambda: False)
+    found = release_check.documents()
+    assert [one.where for one in found] == ["docs/RULES.md"]
+
+
+def test_a_stale_glossary_is_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("dipcount.tools.build_glossary.matches", lambda: False)
+    assert [one.where for one in release_check.documents()] == ["docs/GLOSSARY.md"]
+
+
+def test_a_stale_schema_is_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("dipcount.tools.schema_dump.matches", lambda: False)
+    assert [one.where for one in release_check.documents()] == ["docs/SCHEMA.md"]
+
+
+def test_a_changelog_with_no_entry_is_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("dipcount.tools.release_check.__version__", "9.9.9")
+    found = release_check.changelog()
+    assert "no entry for 9.9.9" in found[0].what

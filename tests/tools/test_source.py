@@ -94,3 +94,8 @@ def test_a_path_prints_relative_to_the_checkout() -> None:
 
 def test_a_path_outside_the_checkout_prints_whole(tmp_path: Path) -> None:
     assert source.where(tmp_path / "a.py") == str(tmp_path / "a.py")
+
+
+def test_a_path_from_outside_the_package_comes_back_as_its_stem(tmp_path: Path) -> None:
+    assert source.dotted(tmp_path / "one.py") == "one"
+    assert source.dotted(tmp_path / "deep" / "two.py") == "two"

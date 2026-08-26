@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from dipcount.tools import check_naming
@@ -62,3 +64,13 @@ def test_the_check_runs_as_a_module() -> None:
     with pytest.raises(SystemExit) as raised:
         check_naming.main()
     assert raised.value.code == 0
+
+
+def test_a_test_function_is_found_in_a_file(tmp_path: Path) -> None:
+    path = tmp_path / "test_one.py"
+    path.write_text("def test_a_real_sentence_here() -> None:\n    assert True\n")
+    assert check_naming._test_functions(path) == [("test_a_real_sentence_here", 1)]
+
+
+def test_the_conftest_and_the_package_file_are_not_test_files() -> None:
+    assert check_naming.test_file_names() == []

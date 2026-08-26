@@ -38,8 +38,16 @@ def test_modules() -> list[Path]:
 
 
 def dotted(path: Path) -> str:
-    """The import name of a source file."""
-    relative = path.relative_to(package_root().parent).with_suffix("")
+    """The import name of a source file.
+
+    A path from outside the package comes back as its own stem rather than
+    raising. The checks are given made up files by their own tests, and a
+    helper that throws on one of those makes the test about the helper.
+    """
+    try:
+        relative = path.relative_to(package_root().parent).with_suffix("")
+    except ValueError:
+        return path.stem
     parts = list(relative.parts)
     if parts[-1] == "__init__":
         parts.pop()

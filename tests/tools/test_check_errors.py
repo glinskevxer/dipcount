@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from dipcount.rules import BY_NAME
@@ -48,3 +50,70 @@ def test_the_check_runs_as_a_module() -> None:
     with pytest.raises(SystemExit) as raised:
         check_errors.main()
     assert raised.value.code == 0
+
+
+def test_a_raised_builtin_is_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "one.py"
+    path.write_text('"""A file."""\n\n\ndef go() -> None:\n    raise ValueError("no")\n')
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    monkeypatch.setattr(source, "dotted", lambda _: "dipcount.service.survey")
+    assert [one.what for one in check_errors.raised_builtins()] == ["raises ValueError"]
+
+
+def test_a_bare_raise_of_a_builtin_name_is_found(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "one.py"
+    path.write_text('"""A file."""\n\n\ndef go() -> None:\n    raise ValueError\n')
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    monkeypatch.setattr(source, "dotted", lambda _: "dipcount.service.survey")
+    assert check_errors.raised_builtins()
+
+
+def test_a_clause_that_is_not_in_the_rule_book_is_found(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "one.py"
+    path.write_text('"""A file."""\n\nRefusal("nothing.here", "no")\n')
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    monkeypatch.setattr(source, "dotted", lambda _: "dipcount.service.survey")
+    found = check_errors.unknown_clauses()
+    assert [one.what for one in found] == ["names the clause nothing.here"]
+
+
+def test_a_bare_except_is_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "one.py"
+    path.write_text('"""A file."""\n\ntry:\n    pass\nexcept:\n    pass\n')
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    assert [one.what for one in check_errors.broad_excepts()] == ["catches everything"]
+
+
+def test_a_silent_broad_except_is_found(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "one.py"
+    path.write_text('"""A file."""\n\ntry:\n    pass\nexcept Exception:\n    pass\n')
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    found = check_errors.broad_excepts()
+    assert "without a reason" in found[0].what
+
+
+def test_a_broad_except_with_a_reason_is_left_alone(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "one.py"
+    path.write_text(
+        '"""A file."""\n\ntry:\n    pass\nexcept Exception:  # it raises three things\n    pass\n',
+    )
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    assert check_errors.broad_excepts() == []
+
+
+def test_a_refusal_with_no_arguments_is_left_alone(tmp_path: Path) -> None:
+    path = tmp_path / "one.py"
+    path.write_text('"""A file."""\n\nRefusal()\n')
+    assert check_errors.clause_names(path) == []

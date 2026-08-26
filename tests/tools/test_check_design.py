@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
-from dipcount.tools import check_design
+from dipcount.tools import check_design, source
 
 
 def test_the_package_passes_its_own_check() -> None:
@@ -50,3 +52,55 @@ def test_the_check_runs_as_a_module() -> None:
     with pytest.raises(SystemExit) as raised:
         check_design.main()
     assert raised.value.code == 0
+
+
+def test_a_dataclass_that_is_not_frozen_is_found(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "one.py"
+    path.write_text(
+        '"""A file."""\n\nfrom dataclasses import dataclass\n\n\n'
+        "@dataclass\nclass Loose:\n    a: int\n",
+    )
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    found = check_design.mutable_records()
+    assert [one.what for one in found] == ["Loose is a dataclass that is not frozen"]
+
+
+def test_a_mutable_default_is_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "one.py"
+    path.write_text('"""A file."""\n\n\ndef go(held: list[int] = []) -> None:\n    pass\n')
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    assert [one.what for one in check_design.shared_defaults()] == ["go has a mutable default"]
+
+
+def test_a_use_of_any_is_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "one.py"
+    path.write_text('"""A file."""\n\nfrom typing import Any\n\nheld: Any = 1\n')
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    monkeypatch.setattr(source, "dotted", lambda _: "dipcount.service.survey")
+    assert [one.what for one in check_design.loose_typing()] == ["uses Any"]
+
+
+def test_a_long_module_is_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "one.py"
+    path.write_text('"""A file."""\n' + "x = 1\n" * 900)
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    assert "lines long" in check_design.long_modules()[0].what
+
+
+def test_a_long_function_is_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    body = "    x = 1\n" * 90
+    path = tmp_path / "one.py"
+    path.write_text(f'"""A file."""\n\n\ndef go() -> None:\n{body}')
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    assert "go is" in check_design.long_functions()[0].what
+
+
+def test_a_long_command_is_left_alone(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    body = "    x = 1\n" * 90
+    path = tmp_path / "one.py"
+    path.write_text(f'"""A file."""\n\n\n@click.command()\ndef go() -> None:\n{body}')
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    assert check_design.long_functions() == []
