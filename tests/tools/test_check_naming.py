@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from dipcount.tools import check_naming
+from dipcount.tools import check_naming, source
 
 
 def test_the_suite_passes_its_own_check() -> None:
@@ -74,3 +74,48 @@ def test_a_test_function_is_found_in_a_file(tmp_path: Path) -> None:
 
 def test_the_conftest_and_the_package_file_are_not_test_files() -> None:
     assert check_naming.test_file_names() == []
+
+
+def test_a_shrug_of_a_test_name_is_reported(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "test_one.py"
+    path.write_text("def test_it_works() -> None:\n    assert True\n")
+    monkeypatch.setattr(source, "test_modules", lambda: [path])
+    found = check_naming.vague_tests()
+    assert [one.what for one in found] == ["test_it_works says _it_works, _works"]
+
+
+def test_a_name_too_short_to_be_a_sentence_is_reported(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "test_one.py"
+    path.write_text("def test_a_short_name() -> None:\n    assert True\n")
+    monkeypatch.setattr(source, "test_modules", lambda: [path])
+    found = check_naming.thin_tests()
+    assert [one.what for one in found] == ["test_a_short_name is not a sentence"]
+
+
+def test_a_module_named_in_capitals_is_reported(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "Loud.py"
+    path.write_text('"""A file."""\n')
+    monkeypatch.setattr(source, "modules", lambda **_: [path])
+    monkeypatch.setattr(source, "test_modules", list)
+    found = check_naming.module_names()
+    assert [one.what for one in found] == ["is not a lower case name"]
+
+
+def test_a_test_file_with_the_wrong_name_is_reported(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "checks_one.py"
+    path.write_text('"""A file."""\n')
+    monkeypatch.setattr(source, "test_modules", lambda: [path])
+    found = check_naming.test_file_names()
+    assert [one.what for one in found] == ["is not called test_something"]

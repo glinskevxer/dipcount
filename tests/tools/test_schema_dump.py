@@ -67,3 +67,31 @@ def test_the_glossary_checks_rather_than_writes_when_asked() -> None:
     with pytest.raises(SystemExit) as raised:
         build_glossary.main(["--check"])
     assert raised.value.code == 0
+
+
+def test_a_stale_schema_document_stops_the_check(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(schema_dump, "matches", lambda: False)
+    with pytest.raises(SystemExit) as raised:
+        schema_dump.main(["--check"])
+    assert raised.value.code == 1
+
+
+def test_a_stale_glossary_stops_the_check(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(build_glossary, "matches", lambda: False)
+    with pytest.raises(SystemExit) as raised:
+        build_glossary.main(["--check"])
+    assert raised.value.code == 1
+
+
+def test_the_schema_document_is_written_when_no_check_is_asked_for(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    schema_dump.main([])
+    assert "wrote" in capsys.readouterr().out
+
+
+def test_the_glossary_is_written_when_no_check_is_asked_for(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    build_glossary.main([])
+    assert "wrote" in capsys.readouterr().out

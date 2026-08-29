@@ -108,3 +108,17 @@ def test_a_documented_name_that_is_not_a_clause_is_found(
     assert [one.what for one in found] == [
         "nothing.here is on the documented list and is not a clause",
     ]
+
+
+def test_a_stale_rule_book_stops_the_check(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(build_rules, "matches", lambda: False)
+    with pytest.raises(SystemExit) as raised:
+        build_rules.main(["--check"])
+    assert raised.value.code == 1
+
+
+def test_the_rule_book_is_written_when_no_check_is_asked_for(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    build_rules.main([])
+    assert "wrote" in capsys.readouterr().out

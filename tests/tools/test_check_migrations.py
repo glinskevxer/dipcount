@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from dipcount.store.migrations import MIGRATIONS, lock_text
@@ -64,3 +66,33 @@ def test_the_check_runs_as_a_module() -> None:
     with pytest.raises(SystemExit) as raised:
         check_migrations.main()
     assert raised.value.code == 0
+
+
+def test_a_missing_lock_file_is_found(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(check_migrations, "lock_path", lambda: tmp_path / "nothing.lock")
+    found = check_migrations.lock_matches()
+    assert [one.what for one in found] == ["is missing"]
+
+
+def test_a_lock_file_of_the_wrong_length_is_found(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "short.lock"
+    path.write_text(lock_text().splitlines()[0] + "\n")
+    monkeypatch.setattr(check_migrations, "lock_path", lambda: path)
+    found = check_migrations.lock_matches()
+    assert any("lines" in one.what for one in found)
+
+
+def test_an_empty_step_is_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    blank = type(MIGRATIONS[0])(1, "blank", "   ")
+    monkeypatch.setattr("dipcount.tools.check_migrations.MIGRATIONS", (blank,))
+    assert [one.what for one in check_migrations.empty_steps()] == ["step 1 is empty"]
+
+
+def test_two_steps_with_one_name_are_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    made = type(MIGRATIONS[0])
+    twice = (made(1, "same", "SELECT 1"), made(2, "same", "SELECT 1"))
+    monkeypatch.setattr("dipcount.tools.check_migrations.MIGRATIONS", twice)
+    assert any("both called" in one.what for one in check_migrations.numbering())
