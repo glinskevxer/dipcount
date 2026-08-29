@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from contextlib import closing
+from pathlib import Path
 
 import click
 
 from dipcount import glossary
 from dipcount.cli.options import Desk, echo_pairs, echo_rows, pass_desk
-from dipcount.store import Book, latest, upgrade
+from dipcount.store import Book, backup, latest, upgrade
 from dipcount.store.migrate import pending
 
 
@@ -38,6 +39,39 @@ def counts(desk: Desk) -> None:
     with desk.book() as opened:
         rows = [[name, str(opened.count(name))] for name in opened.tables()]
     echo_rows(["table", "rows"], rows)
+
+
+@book.command("backup")
+@click.option("--into", required=True, type=click.Path(path_type=Path), help="Where to write.")
+@click.option("--keep", default=0, type=int, help="How many backups to keep, if pruning.")
+@pass_desk
+def backup_it(desk: Desk, into: Path, keep: int) -> None:
+    """Copy the book, open the copy, and say what is in it."""
+    with desk.book() as opened:
+        made = backup.take(opened, into)
+    click.echo(made.line())
+    if keep:
+        for gone in backup.prune(into, keep):
+            click.echo(f"pruned {gone.name}")
+
+
+@book.command("backups")
+@click.option("--into", required=True, type=click.Path(path_type=Path), help="Where they are.")
+def list_backups(into: Path) -> None:
+    """Every backup in a directory, and whether each one opens."""
+    rows = []
+    for one in backup.kept(into):
+        found = backup.verify(one)
+        rows.append(
+            [
+                one.name,
+                str(found.bytes_written),
+                str(found.tables),
+                str(found.rows),
+                "yes" if found.sound else "no",
+            ],
+        )
+    echo_rows(["backup", "bytes", "tables", "rows", "sound"], rows)
 
 
 @book.command("terms")

@@ -83,3 +83,26 @@ def test_one_term_can_be_asked_for(started: Run) -> None:
 def test_an_unknown_term_is_refused(started: Run) -> None:
     result = started("book", "terms", "--word", "swarm", expect=1)
     assert result.exit_code != 0
+
+
+def test_a_backup_is_taken_and_verified(started: Run, tmp_path: Path) -> None:
+    into = tmp_path / "backups"
+    result = started("book", "backup", "--into", str(into))
+    assert "sound" in result.output
+    assert list(into.glob("*.sqlite3"))
+
+
+def test_the_backups_are_listed(started: Run, tmp_path: Path) -> None:
+    into = tmp_path / "backups"
+    started("book", "backup", "--into", str(into))
+    result = started("book", "backups", "--into", str(into))
+    assert "1 row" in result.output
+    assert "yes" in result.output
+
+
+def test_a_rota_prunes_the_oldest(started: Run, tmp_path: Path) -> None:
+    into = tmp_path / "backups"
+    started("book", "backup", "--into", str(into))
+    started("book", "backup", "--into", str(into))
+    result = started("book", "backup", "--into", str(into), "--keep", "1")
+    assert "pruned" in result.output or len(list(into.glob("*.sqlite3"))) <= 2

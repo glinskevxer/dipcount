@@ -208,6 +208,21 @@ class Book:
         """Write the schema version the book is migrated to."""
         self.run(f"PRAGMA user_version = {int(number)}")
 
+    def backup(self, target: sqlite3.Connection) -> None:
+        """Copy this book into another connection, under a read lock.
+
+        Not from inside a grouped write. Sqlite reports the source as busy
+        while a savepoint is open, and python's backup retries a busy source
+        for ever rather than giving up, so the call does not fail: it hangs.
+        Refusing it here turns a wedged nightly job into a sentence.
+        """
+        if self._depth:
+            raise BookError("a backup cannot be taken inside a grouped write")
+        try:
+            self._db.backup(target)
+        except sqlite3.Error as exc:
+            raise BookError(f"the backup did not finish: {exc}") from exc
+
     def integrity(self) -> str:
         """What sqlite says about the file, which is ``ok`` when it is fine."""
         return str(self.value("PRAGMA integrity_check"))

@@ -79,6 +79,13 @@ dipcount --book district.sqlite3 assay run S-methoprene CXPP --dose 43 --minutes
 dipcount --book district.sqlite3 assay board --on 2025-08-20
 ```
 
+Back the book up, and open the copy to prove it is one.
+
+```
+dipcount --book district.sqlite3 book backup --into backups --keep 14
+dipcount --book district.sqlite3 book backups --into backups
+```
+
 Report it.
 
 ```
